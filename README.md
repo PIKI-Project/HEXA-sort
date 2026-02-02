@@ -27,6 +27,7 @@ BEAUTIFUL copy of "HEXA Sort" game
 
 ## Структура репозитория
 
+```
 hexa-sort/
 ├── client/                # Unity проект
 │   ├── Assets/
@@ -55,6 +56,7 @@ hexa-sort/
 ├── .gitignore
 ├── .gitattributes
 └── README.md
+```
 
 ---
 
@@ -104,7 +106,7 @@ hexa-sort/
 
 ### Правила
 
-* Никаких прямых коммитов в `main`
+* Никаких прямых коммитов в `main`, глобальные изменения через PR
 * Prefabs и ScriptableObjects вместо сцен
 * Не трогаем чужие ассеты без согласования
 
