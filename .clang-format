@@ -1,0 +1,25 @@
+Language: CSharp
+BasedOnStyle: Microsoft
+
+############################
+# General
+############################
+
+IndentWidth: 4                          # indent_size = 4
+UseTab: Never                           # indent_style = space
+BreakBeforeBraces: Allman               # csharp_new_line_before_open_brace = all
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Empty
+ColumnLimit: 120
+
+# Switch / case
+
+IndentCaseLabels: true
+
+# System directives
+
+SortIncludes: CaseInsensitive           # dotnet_sort_system_directives_first
+
+# Expression-bodied members
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
