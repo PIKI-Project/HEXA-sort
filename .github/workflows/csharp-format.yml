@@ -1,0 +1,26 @@
+name: C# Format Check
+
+on:
+  push:
+    paths:
+      - '**/*.cs'
+  pull_request:
+    branch: [ "main" ]
+    paths:
+      - '**/*.cs'
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Format
+        run: dotnet format whitespace . --folder --verify-no-changes --verbosity diagnostic
