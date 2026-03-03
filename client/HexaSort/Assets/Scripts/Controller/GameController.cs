@@ -48,7 +48,7 @@ namespace Controller
                     RefreshView();
                     if (_grid.CheckWin())
                     {
-                        Debug.Log("You win!");
+                        Debug.Log("You win!!!");
                     }
                 }
 
