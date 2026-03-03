@@ -5,6 +5,7 @@ on:
     paths:
       - '**/*.cs'
   pull_request:
+    branch: [ "main" ]
     paths:
       - '**/*.cs'
 
