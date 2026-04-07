@@ -1,48 +1,48 @@
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 
 namespace Core
 {
     public class Cell
     {
-        private readonly Stack<Hex> _items;
-        private int Capacity { get; }
+        public readonly Stack<Hex> Items;
 
-        public Cell(int capacity)
+        public Cell()
         {
-            Capacity = capacity;
-            _items = new Stack<Hex>(capacity);
+            Items = new Stack<Hex>();
         }
 
-        public bool IsEmpty => _items.Count == 0;
-        public bool IsFull => _items.Count >= Capacity;
+        public Cell(Stack<Hex> startData)
+        {
+            Items = new Stack<Hex>(startData);
+        }
+
+        public bool IsEmpty => Items.Count == 0;
+        public int Size => Items.Count;
 
         [CanBeNull]
-        public Hex Top() => IsEmpty ? null : _items.Peek();
+        public Hex Top() => IsEmpty ? null : Items.Peek();
 
-        public bool CanPush(Hex value)
+        public void Push(Cell stack)
         {
-            if (IsFull) return false;
-            if (IsEmpty) return true;
-
-            return Top() == value;
+            foreach (Hex item in stack.Items)
+            {
+                Items.Push(item);
+            }
         }
 
-        public void Push(Hex value) => _items.Push(value);
+        public Hex Pop() => Items.Pop();
 
-        public Hex Pop() => _items.Pop();
+        public void Free() => Items.Clear();
 
         public bool IsUniform()
         {
             if (IsEmpty) return false;
 
-            Hex first = _items.Peek();
-            foreach (Hex item in _items)
-            {
-                if (item != first) return false;
-            }
+            Hex first = Items.Peek();
 
-            return true;
+            return Items.All(item => item == first);
         }
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Core;
 using prefabs;
 using UnityEngine;
@@ -6,36 +8,52 @@ namespace Controller
 {
     public class GameController : MonoBehaviour
     {
-        public GridView gridView;
-        private GridManager _grid;
+        private const int _movesCount = 3;
 
+        public GridView gridView;
+        private readonly Cell[] _moves = new Cell[_movesCount];
+        private GridManager _gridMgr;
         private int? _selectedCell;
 
         private void Start()
         {
-            _grid = new GridManager(7, 4);
-            gridView.CreateGrid(_grid.Cells.Count);
+            // TODO: replace with map loader
+            bool[,] mask =
+            {
+                { true, true, true, false, true },
+                { true, true, true, true, true },
+                { true, true, true, false, false },
+                { true, true, true, true, true },
+                { true, true, true, true, true },
+                { true, true, true, true, true },
+                { true, true, true, true, true }
+            };
 
-            _grid.Cells[0].Push(new Hex(0));
-            _grid.Cells[0].Push(new Hex(1));
-            _grid.Cells[1].Push(new Hex(1));
-            _grid.Cells[2].Push(new Hex(0));
+            var startCells = new List<(int x, int y, Cell cell)>
+            {
+                (0, 1, new Cell(CreateStack(1, 1, 1))),
+                (0, 2, new Cell(CreateStack(2, 2, 2, 3))),
+                (2, 2, new Cell(CreateStack(1, 2, 3)))
+            };
 
-            RefreshView();
+            _gridMgr = new GridManager(mask, startCells);
+            gridView.CreateGrid(_gridMgr);
         }
 
-        private void RefreshView()
+        private Stack<Hex> CreateStack(params int[] values) => new(values.Select(v => new Hex(v)));
+
+        /*private void RefreshView()
         {
             for (int i = 0; i < _grid.Cells.Count; i++)
             {
                 Hex top = _grid.Cells[i].Top();
                 gridView.UpdateCell(i, top);
             }
-        }
+        }*/
 
         public void OnCellClicked(int index)
         {
-            if (_selectedCell == null)
+            /*if (_selectedCell == null)
             {
                 _selectedCell = index;
             }
@@ -53,7 +71,7 @@ namespace Controller
                 }
 
                 _selectedCell = null;
-            }
+            }*/
         }
     }
 }

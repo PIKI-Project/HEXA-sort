@@ -223,10 +223,10 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 100
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 3
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -250,13 +250,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.40797427, y: -0, z: -0, w: 0.9129934}
-  m_LocalPosition: {x: 0, y: 9.67, z: -3.79}
+  m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
+  m_LocalPosition: {x: 0, y: 9.33, z: -6.19}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 48.155, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 60, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -457,7 +457,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3798288532247ffaf0fd63c82ef1c51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::prefabs.GridView
-  cellPrefab: {fileID: 3762207419092324013, guid: 8d8be8ddbeaef3f4ba482268ed5a4210, type: 3}
+  hexPrefab: {fileID: 1083872214077038094, guid: a656a5ebf641aa14d893e375a3718918, type: 3}
   controller: {fileID: 67374219}
 --- !u!4 &590193297
 Transform:
