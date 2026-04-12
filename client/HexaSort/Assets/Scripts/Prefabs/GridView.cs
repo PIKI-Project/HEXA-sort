@@ -23,8 +23,12 @@ namespace prefabs
     public class GridView : MonoBehaviour
     {
         // Distance between (rad=1) centers of neighbor hexagons = sqrt(3)
-        private static readonly double _centerDistance = Math.Sqrt(3) + 0.1;
+        private static readonly double _centerDistance = Math.Sqrt(3) + 0.04;
         private static readonly double _sin60 = Math.Sin(Math.PI / 3);
+        private static readonly double _centerDistanceSin60 = _centerDistance * _sin60;
+
+        private static readonly float _layerThreshold = 1.2f;
+        private static readonly float _hexaHeight = 0.18f;
 
         public GameObject hexPrefab;
         public GameController controller;
@@ -42,7 +46,7 @@ namespace prefabs
 
             _hexStackPoses = new HexStackPos[gridMgr.Height, gridMgr.Width];
 
-            double upperLeftY = (gridMgr.Height - 1) * (_centerDistance * _sin60) / 2;
+            double upperLeftY = (gridMgr.Height - 1) * _centerDistanceSin60 / 2;
             double upperLeftX = -gridMgr.Width * _centerDistance / 2;
 
             int cnt = 0;
@@ -50,24 +54,27 @@ namespace prefabs
             {
                 for (int j = 0; j < gridMgr.Width; j++)
                 {
+                    float y = (float)(upperLeftY - i * _centerDistanceSin60);
                     float x = (float)(upperLeftX + j * _centerDistance + _centerDistance * (i % 2) / 2);
-                    float y = (float)(upperLeftY - i * _centerDistance * _sin60);
 
                     Cell cell = gridMgr.GetCell(j, i);
 
                     if (cell == null)
                         continue;
 
-                    GameObject platform = Instantiate(hexPrefab, new Vector3(x, 0.05f, y), Quaternion.identity);
+                    GameObject platform =
+                        Instantiate(hexPrefab, new Vector3(x, -_hexaHeight / 2, y), Quaternion.identity);
                     platform.AddComponent<CellClickHandler>().Init(controller, cnt++);
                     HexView platformView = platform.GetComponent<HexView>();
                     platformView.SetColor(0);
                     _hexStacks[i, j].Push(platformView);
 
-                    int level = 1;
+                    int level = 0;
                     foreach (Hex hex in cell.Items)
                     {
-                        GameObject obj = Instantiate(hexPrefab, new Vector3(x, 0.1f + level * 0.2f, y),
+                        GameObject obj = Instantiate(hexPrefab,
+                            new Vector3(x, _hexaHeight * _layerThreshold / 2 +
+                                           level * (_hexaHeight * _layerThreshold), y),
                             Quaternion.identity);
                         level++;
                         HexView view = obj.GetComponent<HexView>();

@@ -20,10 +20,10 @@ namespace Controller
             // TODO: replace with map loader
             bool[,] mask =
             {
-                { false, true, true, false, false },
-                { true, true, true, false, false },
-                { false, false, true, false, false },
-                { false, false, false, false, false }
+                { false, true, true, true, true },
+                { true, true, true, true, true },
+                { false, true, true, true, false },
+                { true, true, true, true, true }
             };
 
             var startCells = new List<(int x, int y, Cell cell)>
