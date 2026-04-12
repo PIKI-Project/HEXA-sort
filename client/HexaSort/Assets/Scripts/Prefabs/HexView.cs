@@ -4,11 +4,10 @@ namespace prefabs
 {
     public class HexView : MonoBehaviour
     {
-        private static readonly int _baseColor = Shader.PropertyToID("_BaseColor");
-        private Renderer _renderer;
-        public int Index { get; set; }
+        [SerializeField] private Renderer _renderer;
 
-        private void Awake() => _renderer = GetComponent<Renderer>();
+        private static readonly int _baseColor = Shader.PropertyToID("_BaseColor");
+        public int Index { get; set; }
 
         public void SetColor(int value)
         {
