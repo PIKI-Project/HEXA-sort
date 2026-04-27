@@ -22,13 +22,14 @@ namespace prefabs
 
     public class GridView : MonoBehaviour
     {
+        private const float _layerThreshold = 1.2f;
+
+        private const float _hexaHeight = 0.18f;
+
         // Distance between (rad=1) centers of neighbor hexagons = sqrt(3)
         private static readonly double _centerDistance = Math.Sqrt(3) + 0.04;
         private static readonly double _sin60 = Math.Sin(Math.PI / 3);
         private static readonly double _centerDistanceSin60 = _centerDistance * _sin60;
-
-        private static readonly float _layerThreshold = 1.2f;
-        private static readonly float _hexaHeight = 0.18f;
 
         public GameObject hexPrefab;
         public GameController controller;

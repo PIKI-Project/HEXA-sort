@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-using System.Linq;
 using Core;
 using prefabs;
+using Progress;
 using UnityEngine;
 
 namespace Controller
@@ -15,29 +14,11 @@ namespace Controller
         private GridManager _gridMgr;
         private int? _selectedCell;
 
-        private void Start()
+        public void Build(LevelData data)
         {
-            // TODO: replace with map loader
-            bool[,] mask =
-            {
-                { false, true, true, true, true },
-                { true, true, true, true, true },
-                { false, true, true, true, false },
-                { true, true, true, true, true }
-            };
-
-            var startCells = new List<(int x, int y, Cell cell)>
-            {
-                (0, 1, new Cell(CreateStack(1, 1, 1))),
-                (0, 2, new Cell(CreateStack(2, 2, 2, 3))),
-                (2, 2, new Cell(CreateStack(1, 2, 3)))
-            };
-
-            _gridMgr = new GridManager(mask, startCells);
+            _gridMgr = new GridManager(data.Mask, data.StartCells);
             gridView.CreateGrid(_gridMgr);
         }
-
-        private Stack<Hex> CreateStack(params int[] values) => new(values.Select(v => new Hex(v)));
 
         /*private void RefreshView()
         {

@@ -1,12 +1,19 @@
-using UnityEngine;
+using System;
+using System.Collections.Generic;
+using Core;
 
 namespace Progress
 {
-    [CreateAssetMenu(menuName = "Game/Level")]
-    public class LevelData : ScriptableObject
+    [Serializable]
+    public class LevelData
     {
-        public int cellCount;
+        public readonly bool[,] Mask;
+        public readonly List<(int x, int y, Cell cell)> StartCells;
 
-        public int[] initialState;
+        public LevelData(bool[,] mask, List<(int x, int y, Cell cell)> startCells)
+        {
+            Mask = mask;
+            StartCells = startCells;
+        }
     }
 }
