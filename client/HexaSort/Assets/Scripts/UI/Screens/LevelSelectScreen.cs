@@ -2,6 +2,7 @@ using HexaSort.Services;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace HexaSort.UI
 {
@@ -98,7 +99,8 @@ namespace HexaSort.UI
 
         private void OnLevelClicked(int levelNum)
         {
-            // TODO: Load level
+            PlayerPrefs.SetInt("SelectedLevel", levelNum);
+            SceneManager.LoadScene("GameLevelScene");
         }
 
         private void OnLogoutClicked()
