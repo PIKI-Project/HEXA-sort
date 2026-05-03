@@ -104,3 +104,6 @@ InitTestScene*.unity*
 # Firebase Config (API keys)
 /[Aa]ssets/Settings/FirebaseConfig.asset
 /[Aa]ssets/Settings/FirebaseConfig.asset.meta
+
+# VS Code dir 
+.vscode/
