@@ -12,13 +12,15 @@ namespace HexaSort.UI
         [SerializeField]
         private LevelButton[] levelButtons;
 
-        [Header("Logout")][SerializeField] private Button logoutButton;
+        [Header("Logout")]
+        [SerializeField] private Button logoutButton;
 
         [Header("Total Stars")]
         [SerializeField]
         private TextMeshProUGUI totalStarsText;
 
-        [Header("Colors")][SerializeField] private Color unlockedColor = new(0.42f, 0.39f, 1f);
+        [Header("Colors")]
+        [SerializeField] private Color unlockedColor = new(0.42f, 0.39f, 1f);
         [SerializeField] private Color lockedColor = new(0.29f, 0.29f, 0.29f);
         [SerializeField] private Color completedColor = new(0.31f, 0.80f, 0.64f);
 
@@ -37,10 +39,18 @@ namespace HexaSort.UI
 
         private void Start()
         {
+            if (levelButtons == null) return;
+
             for (int i = 0; i < levelButtons.Length; i++)
             {
+                if (levelButtons[i] == null) continue;
+
                 int levelNum = i + 1;
-                levelButtons[i].GetButton().onClick.AddListener(() => OnLevelClicked(levelNum));
+                var button = levelButtons[i].GetButton();
+                if (button != null)
+                {
+                    button.onClick.AddListener(() => OnLevelClicked(levelNum));
+                }
             }
 
             logoutButton?.onClick.AddListener(OnLogoutClicked);
@@ -48,47 +58,44 @@ namespace HexaSort.UI
 
         private void RefreshButtons()
         {
-            PlayerProgressService progress = PlayerProgressService.Instance;
+            var progress = PlayerProgressService.Instance;
 
             if (progress == null) return;
+            if (levelButtons == null || levelButtons.Length == 0) return;
 
             for (int i = 0; i < levelButtons.Length; i++)
             {
+                if (levelButtons[i] == null) continue;
+
                 int levelNum = i + 1;
                 bool unlocked = progress.IsLevelUnlocked(levelNum);
-                LevelResult levelResult = progress.GetLevelResult(levelNum);
+                var levelResult = progress.GetLevelResult(levelNum);
                 bool completed = levelResult != null && levelResult.completed;
                 int stars = levelResult?.stars ?? 0;
 
                 levelButtons[i].Setup(levelNum, stars, unlocked, completed);
 
-                Button button = levelButtons[i].GetButton();
-                ColorBlock colors = button.colors;
+                var button = levelButtons[i].GetButton();
+                if (button == null) continue;
 
-                if (completed)
+                var image = button.GetComponent<Image>();
+                if (image != null)
                 {
-                    colors.normalColor = completedColor;
-                    colors.highlightedColor = new Color(0.4f, 0.9f, 0.7f);
-                    colors.pressedColor = new Color(0.2f, 0.6f, 0.5f);
-                    colors.selectedColor = completedColor;
-                }
-                else if (unlocked)
-                {
-                    colors.normalColor = unlockedColor;
-                    colors.highlightedColor = new Color(0.55f, 0.52f, 1f);
-                    colors.pressedColor = new Color(0.35f, 0.33f, 0.83f);
-                    colors.selectedColor = unlockedColor;
-                }
-                else
-                {
-                    colors.normalColor = lockedColor;
-                    colors.highlightedColor = lockedColor;
-                    colors.pressedColor = lockedColor;
-                    colors.selectedColor = lockedColor;
+                    if (completed)
+                    {
+                        image.color = completedColor;
+                    }
+                    else if (unlocked)
+                    {
+                        image.color = unlockedColor;
+                    }
+                    else
+                    {
+                        image.color = lockedColor;
+                    }
                 }
 
-                colors.disabledColor = lockedColor;
-                button.colors = colors;
+                button.interactable = unlocked;
             }
 
             if (totalStarsText != null)
@@ -105,8 +112,8 @@ namespace HexaSort.UI
 
         private void OnLogoutClicked()
         {
-            FirebaseAuthService.Instance.SignOut();
-            UIManager.Instance.ShowSplash();
+            FirebaseAuthService.Instance?.SignOut();
+            UIManager.Instance?.ShowSplash();
         }
     }
 }
