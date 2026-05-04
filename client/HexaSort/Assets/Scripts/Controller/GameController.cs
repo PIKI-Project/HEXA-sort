@@ -37,19 +37,17 @@ namespace Controller
             gridView.UpdateMoves(_moves);
         }
 
-        private void RefreshView()
-        {
-            /*for (int i = 0; i < _gridMgr.; i++)
-            {
-                Hex top = _grid.Cells[i].Top();
-                gridView.UpdateCell(i, top);
-            }*/
-        }
-
         public void OnMoveCellClicked(int index)
         {
             if (_gameState == GameState.SELECT)
             {
+                if (_moves[index].IsEmpty)
+                {
+                    Debug.Log("This cell is empty!");
+
+                    return;
+                }
+
                 Debug.Log("You chosen move: " + index);
                 _moveIndex = index;
                 _gameState = GameState.MOVE;
@@ -73,13 +71,15 @@ namespace Controller
 
                 if (moved)
                 {
+                    Debug.Log("Move success!!!");
+                    gridView.UpdateCell(x, y, _moves[_moveIndex]);
+
                     _moves[_moveIndex].Free();
                     _moveIndex = -1;
+                    gridView.UpdateMoves(_moves);
+
                     _gameState = GameState.SELECT;
 
-                    Debug.Log("Move success!!!");
-                    gridView.UpdateMoves(_moves);
-                    RefreshView();
                     // TODO: Check if win
                 }
             }

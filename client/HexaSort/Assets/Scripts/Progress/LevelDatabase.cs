@@ -19,8 +19,8 @@ namespace Progress
 
         private static readonly List<(int x, int y, Cell cell)> _startCells = new()
         {
-            (0, 1, new Cell(Creator.CreateStack(1, 1, 1))),
-            (0, 2, new Cell(Creator.CreateStack(2, 2, 2, 3))),
+            (1, 0, new Cell(Creator.CreateStack(1, 1, 1))),
+            (2, 0, new Cell(Creator.CreateStack(2, 2, 2, 3))),
             (2, 2, new Cell(Creator.CreateStack(1, 2, 3)))
         };
 

@@ -68,6 +68,14 @@ namespace prefabs
                 }
             }
 
+            foreach (List<GameObject> cell in _moveCellObjects)
+            {
+                foreach (GameObject obj in cell)
+                {
+                    Destroy(obj);
+                }
+            }
+
             for (int i = 0; i < moves.Length; i++)
             {
                 Vector3 pos = _movePlatformObjects[i].transform.position;
@@ -84,6 +92,31 @@ namespace prefabs
                     HexView view = obj.GetComponent<HexView>();
                     view.SetColor(hex.Type);
                 }
+            }
+        }
+
+        public void UpdateCell(int x, int y, Cell cell)
+        {
+            if (_cellObjects[y, x].Count != 0)
+            {
+                Debug.Log("Tha hell?! Impossible");
+
+                return;
+            }
+
+            int level = 0;
+            Vector3 pos = _platformObjects[y, x].transform.position;
+            foreach (Hex hex in cell.Items)
+            {
+                GameObject obj = Instantiate(hexPrefab,
+                    new Vector3(pos.x, _hexaHeight * _layerThreshold / 2 +
+                                       level * (_hexaHeight * _layerThreshold), pos.z),
+                    Quaternion.identity);
+                _cellObjects[y, x].Add(obj);
+
+                level++;
+                HexView view = obj.GetComponent<HexView>();
+                view.SetColor(hex.Type);
             }
         }
 

@@ -6,10 +6,6 @@ namespace Core
 {
     public class CellGrid
     {
-        public readonly bool[,] _mask;
-
-        public readonly int _width, _height;
-
         // Cells grid is strings with delta (hex grid)
         // # # # #
         //  # # # #
@@ -18,33 +14,39 @@ namespace Core
 
         public CellGrid(bool[,] mask)
         {
-            _height = mask.GetLength(0);
-            _width = mask.GetLength(1);
+            Height = mask.GetLength(0);
+            Width = mask.GetLength(1);
 
-            _mask = new bool[_height, _width];
-            Array.Copy(mask, _mask, mask.Length);
+            Mask = new bool[Height, Width];
+            Array.Copy(mask, Mask, mask.Length);
 
-            Cells = new Cell[_height, _width];
-            for (int y = 0; y < _height; y++)
-            for (int x = 0; x < _width; x++)
-            {
-                Cells[y, x] = new Cell();
-            }
+            Cells = new Cell[Height, Width];
+            for (int y = 0; y < Height; y++)
+                for (int x = 0; x < Width; x++)
+                {
+                    Cells[y, x] = new Cell();
+                }
         }
+
+        public int Width { get; }
+
+        public int Height { get; }
+
+        public bool[,] Mask { get; }
 
         public bool TryPushCell(int posX, int posY, Cell cell)
         {
             if (!IsValidMove(cell, posX, posY))
                 return false;
 
-            Cells[posX, posY] = cell;
+            Cells[posY, posX] = cell;
 
             return true;
         }
 
         private bool IsValidMove(Cell from, int toPosX, int toPosY)
         {
-            if (!_mask[toPosX, toPosY] || !Cells[toPosX, toPosY].IsEmpty)
+            if (!Mask[toPosY, toPosX] || !Cells[toPosY, toPosX].IsEmpty)
                 return false;
 
             return !from.IsEmpty;
@@ -67,13 +69,13 @@ namespace Core
             }
         }
 
-        public int Width => _grid._width;
+        public int Width => _grid.Width;
 
-        public int Height => _grid._height;
+        public int Height => _grid.Height;
 
         public bool TryMove(Cell from, int toPosX, int toPosY) => _grid.TryPushCell(toPosX, toPosY, from);
 
         [CanBeNull]
-        public Cell GetCell(int x, int y) => _grid._mask[y, x] ? _grid.Cells[y, x] : null;
+        public Cell GetCell(int x, int y) => _grid.Mask[y, x] ? _grid.Cells[y, x] : null;
     }
 }
