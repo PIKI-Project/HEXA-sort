@@ -59,6 +59,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 70b432ec4adc50046926093fe3f27e01, type: 3}
       insertIndex: -1
       addedObject: {fileID: -7383361930067771288}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 70b432ec4adc50046926093fe3f27e01, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8028846118408216185}
   m_SourcePrefab: {fileID: 100100000, guid: 70b432ec4adc50046926093fe3f27e01, type: 3}
 --- !u!1 &1083872214077038094 stripped
 GameObject:
@@ -78,6 +81,28 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::prefabs.HexView
   _renderer: {fileID: 1568310307569674290}
+--- !u!64 &8028846118408216185
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083872214077038094}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -2432090755550338912, guid: 70b432ec4adc50046926093fe3f27e01, type: 3}
 --- !u!23 &1568310307569674290 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: -7635826562936255635, guid: 70b432ec4adc50046926093fe3f27e01, type: 3}
