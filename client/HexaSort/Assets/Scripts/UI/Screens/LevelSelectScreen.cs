@@ -1,4 +1,5 @@
 using HexaSort.Services;
+using HexaSort.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,11 +33,26 @@ namespace HexaSort.UI
             if (PlayerProgressService.Instance == null)
                 return;
 
+            PlayerProgressService.Instance.OnProgressLoaded += OnProgressLoaded;
+
             if (!PlayerProgressService.Instance.IsLoaded)
             {
                 await PlayerProgressService.Instance.LoadProgressAsync();
             }
 
+            RefreshButtons();
+        }
+
+        private void OnDisable()
+        {
+            if (PlayerProgressService.Instance != null)
+            {
+                PlayerProgressService.Instance.OnProgressLoaded -= OnProgressLoaded;
+            }
+        }
+
+        private void OnProgressLoaded(PlayerProgress progress)
+        {
             RefreshButtons();
         }
 
@@ -111,6 +127,7 @@ namespace HexaSort.UI
         private void OnLevelClicked(int levelNum)
         {
             PlayerPrefs.SetInt("SelectedLevel", levelNum);
+            MusicManager.Instance?.PlayGameMusic();
             SceneManager.LoadScene("GameLevelScene");
         }
 

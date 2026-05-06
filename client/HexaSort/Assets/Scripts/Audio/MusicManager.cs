@@ -7,8 +7,8 @@ namespace HexaSort.Audio
         public static MusicManager Instance { get; private set; }
 
         [Header("Music")]
-        [SerializeField] private AudioClip backgroundMusic;
-        [SerializeField] [Range(0f, 1f)] private float musicVolume = 0.5f;
+        [SerializeField] private AudioClip menuMusic;
+        [SerializeField] private AudioClip gameMusic;
 
         private AudioSource audioSource;
 
@@ -26,16 +26,30 @@ namespace HexaSort.Audio
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.loop = true;
             audioSource.playOnAwake = false;
-            audioSource.volume = musicVolume;
         }
 
         private void Start()
         {
-            if (backgroundMusic != null)
-            {
-                audioSource.clip = backgroundMusic;
-                audioSource.Play();
-            }
+            PlayMenuMusic();
+        }
+
+        public void PlayMenuMusic()
+        {
+            PlayMusic(menuMusic);
+        }
+
+        public void PlayGameMusic()
+        {
+            PlayMusic(gameMusic);
+        }
+
+        private void PlayMusic(AudioClip clip)
+        {
+            if (clip == null) return;
+            if (audioSource.clip == clip && audioSource.isPlaying) return;
+
+            audioSource.clip = clip;
+            audioSource.Play();
         }
     }
 }
