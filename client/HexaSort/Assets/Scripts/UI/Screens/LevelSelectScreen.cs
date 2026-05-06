@@ -15,6 +15,9 @@ namespace HexaSort.UI
         [Header("Logout")]
         [SerializeField] private Button logoutButton;
 
+        [Header("Settings")]
+        [SerializeField] private Button settingsButton;
+
         [Header("Total Stars")]
         [SerializeField]
         private TextMeshProUGUI totalStarsText;
@@ -54,6 +57,7 @@ namespace HexaSort.UI
             }
 
             logoutButton?.onClick.AddListener(OnLogoutClicked);
+            settingsButton?.onClick.AddListener(OnSettingsClicked);
         }
 
         private void RefreshButtons()
@@ -108,6 +112,11 @@ namespace HexaSort.UI
         {
             PlayerPrefs.SetInt("SelectedLevel", levelNum);
             SceneManager.LoadScene("GameLevelScene");
+        }
+
+        private void OnSettingsClicked()
+        {
+            SettingsPopup.Instance?.Open();
         }
 
         private void OnLogoutClicked()

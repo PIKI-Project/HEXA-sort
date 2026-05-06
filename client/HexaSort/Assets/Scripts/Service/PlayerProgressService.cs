@@ -17,6 +17,7 @@ namespace HexaSort.Services
 
         public int CurrentLevel => Progress?.currentLevel ?? 1;
         public int TotalStars => Progress?.totalStars ?? 0;
+        public float SoundVolume => Progress?.soundVolume ?? 0.5f;
         public bool IsLoaded => Progress != null;
 
         private void Awake()
@@ -71,6 +72,7 @@ namespace HexaSort.Services
                 Progress = CreateInitialProgress();
             }
 
+            AudioListener.volume = Progress.soundVolume;
             OnProgressLoaded?.Invoke(Progress);
 
             return true;
@@ -143,6 +145,14 @@ namespace HexaSort.Services
             return saved;
         }
 
+        public async Task<bool> SetSoundVolumeAsync(float volume)
+        {
+            if (Progress == null) return false;
+
+            Progress.soundVolume = volume;
+            return await SaveProgressAsync();
+        }
+
         public bool IsLevelUnlocked(int levelNumber)
         {
             if (Progress == null) return levelNumber == 1;
@@ -166,6 +176,7 @@ namespace HexaSort.Services
             {
                 currentLevel = 1,
                 totalStars = 0,
+                soundVolume = 0.5f,
                 createdAt = DateTime.UtcNow.ToString("o"),
                 lastUpdated = DateTime.UtcNow.ToString("o"),
                 levels = new List<LevelResult>()
@@ -195,6 +206,7 @@ namespace HexaSort.Services
     {
         public int currentLevel;
         public int totalStars;
+        public float soundVolume = 0.5f;
         public string createdAt;
         public string lastUpdated;
         public List<LevelResult> levels;
