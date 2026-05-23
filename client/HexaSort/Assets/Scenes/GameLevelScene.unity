@@ -716,6 +716,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::prefabs.GridView
   hexPrefab: {fileID: 1083872214077038094, guid: a656a5ebf641aa14d893e375a3718918, type: 3}
+  hexCountLabelPrefab: {fileID: 3644263871056637254, guid: 6b23f2ffd1f664a249c412be0298de3c, type: 3}
   controller: {fileID: 67374219}
 --- !u!4 &590193297
 Transform:

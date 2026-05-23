@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using NUnit.Framework;
 
 namespace Core
 {
@@ -43,6 +44,28 @@ namespace Core
             Hex first = Items.Peek();
 
             return Items.All(item => item == first);
+        }
+
+        public int GetTopColorCount()
+        {
+            if (IsEmpty) return 0;
+
+            Hex[] items = Items.ToArray();
+            int topType = items[items.Length - 1].Type;
+            int count = 0;
+
+            for (int i = items.Length - 1; i >= 0; i--)
+            {
+                if (items[i].Type == topType)
+                {
+                    count++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return count;
         }
     }
 }

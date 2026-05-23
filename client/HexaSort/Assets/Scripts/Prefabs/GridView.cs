@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Controller;
 using Core;
 using UnityEngine;
+using TMPro;
 
 namespace prefabs
 {
@@ -41,12 +42,15 @@ namespace prefabs
 
         private const float _hexaHeight = 0.18f;
 
+        private const float _labelHeight = 0.3f;
+
         // Distance between (rad=1) centers of neighbor hexagons = sqrt(3)
         private static readonly double _centerDistance = Math.Sqrt(3) + 0.04;
         private static readonly double _sin60 = Math.Sin(Math.PI / 3);
         private static readonly double _centerDistanceSin60 = _centerDistance * _sin60;
 
         public GameObject hexPrefab;
+        public GameObject hexCountLabelPrefab;
         public GameController controller;
 
         private List<GameObject>[,] _cellObjects;
@@ -54,6 +58,11 @@ namespace prefabs
         private GameObject[] _movePlatformObjects;
 
         private GameObject[,] _platformObjects;
+
+        private TextMeshProUGUI[,] _cellLabels;
+        private GameObject[,] _cellLabelObjects;
+        private TextMeshProUGUI[] _moveLabels;
+        private GameObject[] _moveLabelObjects;
 
         private double _upperLeftX, _upperLeftY;
 
@@ -118,12 +127,28 @@ namespace prefabs
                 HexView view = obj.GetComponent<HexView>();
                 view.SetColor(hex.Type);
             }
+
+            UpdateCellLabel(x, y, cell);
+        }
+
+        public void UpdateCellLabel(int x, int y, Cell cell)
+        {
+            if (_cellLabels == null || _cellLabels[y, x] == null) return;
+
+            int count = cell.GetTopColorCount();
+            _cellLabels[y, x].text = count > 0 ? count.ToString() : "";
+
+            Vector3 pos = _platformObjects[y, x].transform.position;
+            float stackHeight = cell.Size * _hexaHeight * _layerThreshold;
+            _cellLabelObjects[y, x].transform.position = new Vector3(pos.x, stackHeight + _labelHeight, pos.z);
         }
 
         public void CreateGrid(GridManager gridMgr, int movesCount)
         {
             _platformObjects = new GameObject[gridMgr.Height, gridMgr.Width];
             _cellObjects = new List<GameObject>[gridMgr.Height, gridMgr.Width];
+            _cellLabels = new TextMeshProUGUI[gridMgr.Height, gridMgr.Width];
+            _cellLabelObjects = new GameObject[gridMgr.Height, gridMgr.Width];
             for (int y = 0; y < gridMgr.Height; y++)
                 for (int x = 0; x < gridMgr.Width; x++)
                 {
@@ -166,6 +191,13 @@ namespace prefabs
                     HexView platformView = platform.GetComponent<HexView>();
                     platformView.SetColor(0);
 
+                    if (hexCountLabelPrefab != null)
+                    {
+                        GameObject label = Instantiate(hexCountLabelPrefab, new Vector3(x, _labelHeight, y), Quaternion.identity);
+                        _cellLabelObjects[i, j] = label;
+                        _cellLabels[i, j] = label.GetComponentInChildren<TextMeshProUGUI>();
+                    }
+
                     // Create hexes on platform
                     int level = 0;
                     foreach (Hex hex in cell.Items)
@@ -180,6 +212,8 @@ namespace prefabs
                         HexView view = obj.GetComponent<HexView>();
                         view.SetColor(hex.Type);
                     }
+
+                    UpdateCellLabel(j, i, cell);
                 }
             }
         }
