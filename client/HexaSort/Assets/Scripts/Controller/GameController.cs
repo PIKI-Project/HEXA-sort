@@ -11,9 +11,9 @@ namespace Controller
 {
     internal enum GameState
     {
-        ANIMATING,
-        SELECT,
-        MOVE
+        Animating,
+        Select,
+        Move
     }
 
     public class GameController : MonoBehaviour
@@ -22,7 +22,7 @@ namespace Controller
         public GridView gridView;
 
         private readonly Cell[] _moves = new Cell[_movesCount];
-        private GameState _gameState = GameState.SELECT;
+        private GameState _gameState = GameState.Select;
         private GridManager _gridMgr;
         private int _moveIndex = -1;
 
@@ -44,7 +44,7 @@ namespace Controller
 
         public void OnMoveCellClicked(int index)
         {
-            if (_gameState == GameState.SELECT)
+            if (_gameState == GameState.Select)
             {
                 if (_moves[index].IsEmpty)
                 {
@@ -55,7 +55,7 @@ namespace Controller
 
                 Debug.Log("You chosen move: " + index);
                 _moveIndex = index;
-                _gameState = GameState.MOVE;
+                _gameState = GameState.Move;
             }
             else
             {
@@ -118,12 +118,12 @@ namespace Controller
             _moveIndex = -1;
             gridView.UpdateMoves(_moves);
 
-            _gameState = GameState.ANIMATING;
+            _gameState = GameState.Animating;
             bool moved = _gridMgr.TryMove(new Cell(moveCopied.Items), x, y);
 
             if (!moved)
             {
-                _gameState = GameState.SELECT;
+                _gameState = GameState.Select;
 
                 yield break;
             }
@@ -140,15 +140,15 @@ namespace Controller
                 clusters = Finder.FindAllClusters();
             }
 
-            // Free move that is used
-            _gameState = GameState.SELECT;
+            // Change game state
+            _gameState = GameState.Select;
 
             // TODO: Check if win
         }
 
         public void OnCellClicked(int x, int y)
         {
-            if (_gameState != GameState.MOVE)
+            if (_gameState != GameState.Move)
             {
                 Debug.Log("You need to choose move!");
             }

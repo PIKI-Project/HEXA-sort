@@ -54,7 +54,7 @@ namespace Core
             }
         }
 
-        public Hex Pop() => Items.Pop();
+        private Hex Pop() => Items.Pop();
 
         public void Free() => Items.Clear();
 
