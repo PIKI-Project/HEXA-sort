@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using NUnit.Framework;
 
 namespace Core
 {
@@ -16,14 +15,14 @@ namespace Core
 
         public Cell(Stack<Hex> startData)
         {
-            Items = new Stack<Hex>(startData);
+            Items = new Stack<Hex>(startData.Reverse());
         }
 
         public bool IsEmpty => Items.Count == 0;
         public int Size => Items.Count;
 
         [CanBeNull]
-        public Hex Top() => IsEmpty ? null : Items.Peek();
+        public Hex Peek() => IsEmpty ? null : Items.ToArray()[Items.Count - 1];
 
         public void Push(Cell stack)
         {
@@ -65,6 +64,7 @@ namespace Core
                     break;
                 }
             }
+
             return count;
         }
     }
