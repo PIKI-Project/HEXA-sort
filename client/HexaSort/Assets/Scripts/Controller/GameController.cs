@@ -34,7 +34,7 @@ namespace Controller
 
             for (int i = 0; i < _movesCount; i++)
             {
-                _moves[i] = new Cell(Creator.CreateStack(1, 2, 3));
+                _moves[i] = new Cell(Creator.CreateStack(3, 2, 1));
             }
 
             gridView.UpdateMoves(_moves);
@@ -79,6 +79,25 @@ namespace Controller
             return chosen;
         }
 
+        private void RebuildField(int lastMoveX, int lastMoveY)
+        {
+            List<List<HexCoord>> clusters =
+                Finder.FindAllClusters();
+            foreach (List<HexCoord> cluster in clusters)
+            {
+                HexCoord target =
+                    SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
+
+                List<ClusterFinder.PullStep> steps = Finder.PullCluster(cluster, target);
+                foreach (ClusterFinder.PullStep step in steps)
+                {
+                    Debug.Log(
+                        $"MOVE {step.From.X},{step.From.Y} " +
+                        $"-> {step.To.X},{step.To.Y}");
+                }
+            }
+        }
+
         public void OnCellClicked(int x, int y)
         {
             if (_gameState != GameState.MOVE)
@@ -96,21 +115,7 @@ namespace Controller
                     gridView.UpdateCell(x, y, new Cell(_moves[_moveIndex].Items));
 
                     // Rebuild field if needed
-                    List<List<HexCoord>> clusters =
-                        Finder.FindAllClusters();
-                    foreach (List<HexCoord> cluster in clusters)
-                    {
-                        HexCoord target =
-                            SelectTargetCell(cluster, new HexCoord(x, y));
-
-                        List<ClusterFinder.PullStep> steps = Finder.PullCluster(cluster, target);
-                        foreach (ClusterFinder.PullStep step in steps)
-                        {
-                            Debug.Log(
-                                $"MOVE {step.From.X},{step.From.Y} " +
-                                $"-> {step.To.X},{step.To.Y}");
-                        }
-                    }
+                    RebuildField(x, y);
 
                     // Free move that is used
                     _moves[_moveIndex].Free();

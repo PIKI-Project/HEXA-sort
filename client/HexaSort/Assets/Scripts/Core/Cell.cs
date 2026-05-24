@@ -21,8 +21,28 @@ namespace Core
         public bool IsEmpty => Items.Count == 0;
         public int Size => Items.Count;
 
+        public Stack<Hex> PopTopIdentical()
+        {
+            var result = new Stack<Hex>();
+
+            if (Items.Count == 0)
+                return result;
+
+            int topValue = Items.Peek().Type;
+
+            foreach (Hex hex in Items)
+            {
+                if (hex.Type != topValue)
+                    break;
+
+                result.Push(hex);
+            }
+
+            return new Stack<Hex>(result);
+        }
+
         [CanBeNull]
-        public Hex Peek() => IsEmpty ? null : Items.ToArray()[Items.Count - 1];
+        public Hex Peek() => IsEmpty ? null : Items.Peek();
 
         public void Push(Cell stack)
         {
@@ -49,23 +69,9 @@ namespace Core
         {
             if (IsEmpty) return 0;
 
-            Hex[] items = Items.ToArray();
-            int topType = items[items.Length - 1].Type;
-            int count = 0;
+            int topType = Items.Peek().Type;
 
-            for (int i = items.Length - 1; i >= 0; i--)
-            {
-                if (items[i].Type == topType)
-                {
-                    count++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return count;
+            return Items.TakeWhile(x => x.Type == topType).Count();
         }
     }
 }

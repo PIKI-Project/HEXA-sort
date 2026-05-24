@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using Controller;
 using Core;
-using UnityEngine;
 using TMPro;
+using UnityEngine;
 
 namespace prefabs
 {
@@ -52,17 +52,17 @@ namespace prefabs
         public GameObject hexPrefab;
         public GameObject hexCountLabelPrefab;
         public GameController controller;
+        private GameObject[,] _cellLabelObjects;
+
+        private TextMeshProUGUI[,] _cellLabels;
 
         private List<GameObject>[,] _cellObjects;
         private List<GameObject>[] _moveCellObjects;
+        private GameObject[] _moveLabelObjects;
+        private TextMeshProUGUI[] _moveLabels;
         private GameObject[] _movePlatformObjects;
 
         private GameObject[,] _platformObjects;
-
-        private TextMeshProUGUI[,] _cellLabels;
-        private GameObject[,] _cellLabelObjects;
-        private TextMeshProUGUI[] _moveLabels;
-        private GameObject[] _moveLabelObjects;
 
         private double _upperLeftX, _upperLeftY;
 
@@ -89,13 +89,13 @@ namespace prefabs
             {
                 Vector3 pos = _movePlatformObjects[i].transform.position;
 
-                int level = 1;
+                int level = moves[i].Items.Count;
                 foreach (Hex hex in moves[i].Items)
                 {
                     GameObject obj = Instantiate(hexPrefab,
                         new Vector3(pos.x, pos.y + level * (_hexaHeight * _layerThreshold), pos.z),
                         Quaternion.identity);
-                    level++;
+                    level--;
 
                     _moveCellObjects[i].Add(obj);
                     HexView view = obj.GetComponent<HexView>();
@@ -113,7 +113,7 @@ namespace prefabs
                 return;
             }
 
-            int level = 0;
+            int level = cell.Items.Count - 1;
             Vector3 pos = _platformObjects[y, x].transform.position;
             foreach (Hex hex in cell.Items)
             {
@@ -123,7 +123,7 @@ namespace prefabs
                     Quaternion.identity);
                 _cellObjects[y, x].Add(obj);
 
-                level++;
+                level--;
                 HexView view = obj.GetComponent<HexView>();
                 view.SetColor(hex.Type);
             }
@@ -193,13 +193,14 @@ namespace prefabs
 
                     if (hexCountLabelPrefab != null)
                     {
-                        GameObject label = Instantiate(hexCountLabelPrefab, new Vector3(x, _labelHeight, y), Quaternion.identity);
+                        GameObject label = Instantiate(hexCountLabelPrefab, new Vector3(x, _labelHeight, y),
+                            Quaternion.identity);
                         _cellLabelObjects[i, j] = label;
                         _cellLabels[i, j] = label.GetComponentInChildren<TextMeshProUGUI>();
                     }
 
                     // Create hexes on platform
-                    int level = 0;
+                    int level = cell.Items.Count - 1;
                     foreach (Hex hex in cell.Items)
                     {
                         GameObject obj = Instantiate(hexPrefab,
@@ -208,7 +209,7 @@ namespace prefabs
                             Quaternion.identity);
                         _cellObjects[i, j].Add(obj);
 
-                        level++;
+                        level--;
                         HexView view = obj.GetComponent<HexView>();
                         view.SetColor(hex.Type);
                     }
