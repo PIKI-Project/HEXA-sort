@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Core;
 using prefabs;
@@ -79,7 +80,7 @@ namespace Controller
             return chosen;
         }
 
-        private void RebuildField(int lastMoveX, int lastMoveY)
+        private IEnumerator RebuildField(int lastMoveX, int lastMoveY)
         {
             List<List<HexCoord>> clusters =
                 Finder.FindAllClusters();
@@ -94,8 +95,55 @@ namespace Controller
                     Debug.Log(
                         $"MOVE {step.From.X},{step.From.Y} " +
                         $"-> {step.To.X},{step.To.Y}");
+
+                    Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
+                    Cell toCell = _gridMgr.GetCell(step.To.X, step.To.Y);
+
+                    if (fromCell == null || toCell == null)
+                        throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
+
+                    toCell.PushToTop(fromCell.PopTopIdentical());
+                    gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
+                    gridView.UpdateCell(step.To.X, step.To.Y, toCell);
+
+                    yield return new WaitForSeconds(0.3f);
                 }
             }
+        }
+
+        private IEnumerator ProcessMove(int x, int y)
+        {
+            var moveCopied = new Cell(_moves[_moveIndex].Items);
+            _moves[_moveIndex].Free();
+            _moveIndex = -1;
+            gridView.UpdateMoves(_moves);
+
+            _gameState = GameState.ANIMATING;
+            bool moved = _gridMgr.TryMove(new Cell(moveCopied.Items), x, y);
+
+            if (!moved)
+            {
+                _gameState = GameState.SELECT;
+
+                yield break;
+            }
+
+            gridView.UpdateCell(x, y, new Cell(moveCopied.Items));
+
+            // Rebuild field if needed
+            List<List<HexCoord>> clusters =
+                Finder.FindAllClusters();
+            while (clusters.Count > 0)
+            {
+                yield return StartCoroutine(RebuildField(x, y));
+
+                clusters = Finder.FindAllClusters();
+            }
+
+            // Free move that is used
+            _gameState = GameState.SELECT;
+
+            // TODO: Check if win
         }
 
         public void OnCellClicked(int x, int y)
@@ -107,24 +155,7 @@ namespace Controller
             else
             {
                 Debug.Log("You chosen cell: {" + x + ", " + y + "}");
-                bool moved = _gridMgr.TryMove(new Cell(_moves[_moveIndex].Items), x, y);
-
-                if (moved)
-                {
-                    Debug.Log("Move success!!!");
-                    gridView.UpdateCell(x, y, new Cell(_moves[_moveIndex].Items));
-
-                    // Rebuild field if needed
-                    RebuildField(x, y);
-
-                    // Free move that is used
-                    _moves[_moveIndex].Free();
-                    _moveIndex = -1;
-                    gridView.UpdateMoves(_moves);
-                    _gameState = GameState.SELECT;
-
-                    // TODO: Check if win
-                }
+                StartCoroutine(ProcessMove(x, y));
             }
         }
     }

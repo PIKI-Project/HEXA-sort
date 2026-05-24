@@ -30,12 +30,14 @@ namespace Core
 
             int topValue = Items.Peek().Type;
 
-            foreach (Hex hex in Items)
+            foreach (Hex hex in Items.TakeWhile(hex => hex.Type == topValue))
             {
-                if (hex.Type != topValue)
-                    break;
-
                 result.Push(hex);
+            }
+
+            for (int i = 0; i < result.Count; i++)
+            {
+                Pop();
             }
 
             return new Stack<Hex>(result);
@@ -44,9 +46,9 @@ namespace Core
         [CanBeNull]
         public Hex Peek() => IsEmpty ? null : Items.Peek();
 
-        public void Push(Cell stack)
+        public void PushToTop(Stack<Hex> stack)
         {
-            foreach (Hex item in stack.Items)
+            foreach (Hex item in stack.Reverse())
             {
                 Items.Push(item);
             }
@@ -60,9 +62,9 @@ namespace Core
         {
             if (IsEmpty) return false;
 
-            Hex first = Items.Peek();
+            int firstType = Items.Peek().Type;
 
-            return Items.All(item => item == first);
+            return Items.All(item => item.Type == firstType);
         }
 
         public int GetTopColorCount()

@@ -40,7 +40,7 @@ namespace prefabs
     {
         private const float _layerThreshold = 1.2f;
 
-        private const float _hexaHeight = 0.18f;
+        private const float _hexHeight = 0.18f;
 
         private const float _labelHeight = 0.3f;
 
@@ -93,7 +93,7 @@ namespace prefabs
                 foreach (Hex hex in moves[i].Items)
                 {
                     GameObject obj = Instantiate(hexPrefab,
-                        new Vector3(pos.x, pos.y + level * (_hexaHeight * _layerThreshold), pos.z),
+                        new Vector3(pos.x, pos.y + level * (_hexHeight * _layerThreshold), pos.z),
                         Quaternion.identity);
                     level--;
 
@@ -106,20 +106,28 @@ namespace prefabs
 
         public void UpdateCell(int x, int y, Cell cell)
         {
-            if (_cellObjects[y, x].Count != 0)
+            /*if (_cellObjects[y, x].Count != 0)
             {
-                Debug.Log("Tha hell?! Impossible");
-
+                Debug.Log("Cell is not empty");
                 return;
+            }*/
+
+            // Rebuild cell
+            foreach (GameObject obj in _cellObjects[y, x])
+            {
+                Destroy(obj);
             }
 
+            _cellObjects[y, x] = new List<GameObject>();
+
+            // Add objects to drawing
             int level = cell.Items.Count - 1;
             Vector3 pos = _platformObjects[y, x].transform.position;
             foreach (Hex hex in cell.Items)
             {
                 GameObject obj = Instantiate(hexPrefab,
-                    new Vector3(pos.x, _hexaHeight * _layerThreshold / 2 +
-                                       level * (_hexaHeight * _layerThreshold), pos.z),
+                    new Vector3(pos.x, _hexHeight * _layerThreshold / 2 +
+                                       level * (_hexHeight * _layerThreshold), pos.z),
                     Quaternion.identity);
                 _cellObjects[y, x].Add(obj);
 
@@ -133,13 +141,13 @@ namespace prefabs
 
         public void UpdateCellLabel(int x, int y, Cell cell)
         {
-            if (_cellLabels == null || _cellLabels[y, x] == null) return;
+            if (_cellLabels?[y, x] is null) return;
 
             int count = cell.GetTopColorCount();
             _cellLabels[y, x].text = count > 0 ? count.ToString() : "";
 
             Vector3 pos = _platformObjects[y, x].transform.position;
-            float stackHeight = cell.Size * _hexaHeight * _layerThreshold;
+            float stackHeight = cell.Size * _hexHeight * _layerThreshold;
             _cellLabelObjects[y, x].transform.position = new Vector3(pos.x, stackHeight + _labelHeight, pos.z);
         }
 
@@ -162,7 +170,7 @@ namespace prefabs
             _movePlatformObjects = new GameObject[movesCount];
             for (int i = 0; i < movesCount; i++)
             {
-                var vec = new Vector3((float)(_upperLeftX - 2 * _centerDistance - 0.3f * i), -_hexaHeight / 2,
+                var vec = new Vector3((float)(_upperLeftX - 2 * _centerDistance - 0.3f * i), -_hexHeight / 2,
                     (float)_upperLeftY - 2.3f * i);
                 GameObject move = Instantiate(hexPrefab, vec, Quaternion.identity);
                 move.AddComponent<MoveCellClickHandler>().Init(controller, i);
@@ -184,7 +192,7 @@ namespace prefabs
 
                     // Create platform
                     GameObject platform =
-                        Instantiate(hexPrefab, new Vector3(x, -_hexaHeight / 2, y), Quaternion.identity);
+                        Instantiate(hexPrefab, new Vector3(x, -_hexHeight / 2, y), Quaternion.identity);
                     platform.AddComponent<CellClickHandler>().Init(controller, j, i);
                     _platformObjects[i, j] = platform;
 
@@ -204,8 +212,8 @@ namespace prefabs
                     foreach (Hex hex in cell.Items)
                     {
                         GameObject obj = Instantiate(hexPrefab,
-                            new Vector3(x, _hexaHeight * _layerThreshold / 2 +
-                                           level * (_hexaHeight * _layerThreshold), y),
+                            new Vector3(x, _hexHeight * _layerThreshold / 2 +
+                                           level * (_hexHeight * _layerThreshold), y),
                             Quaternion.identity);
                         _cellObjects[i, j].Add(obj);
 
@@ -225,12 +233,12 @@ namespace prefabs
                 _hexStacks[index][0].SetColor(-1);
             else
                 _hexStacks[index][0].SetColor(topValue.Type);
-        }*/
+        }
 
         private struct HexStackPos
         {
             private float _x;
             private float _y;
-        }
+        }*/
     }
 }
