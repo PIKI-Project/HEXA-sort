@@ -7,6 +7,7 @@ using prefabs;
 using Progress;
 using UnityEngine;
 using Utilities;
+using HexaSort.Services;
 using Random = UnityEngine.Random;
 
 namespace Controller
@@ -25,7 +26,6 @@ namespace Controller
 
         private readonly Cell[] _moves = new Cell[_movesCount];
 
-        // TODO: write system for giving good moves
         private readonly Cell[] _someReadyMoves =
         {
             new(Creator.CreateStack(3, 2, 2)),
@@ -40,21 +40,92 @@ namespace Controller
         private GameState _gameState = GameState.Select;
         private GridManager _gridMgr;
         private int _moveIndex = -1;
+        private int _currentScore = 0;
 
         public ClusterFinder Finder;
 
-        public void Build(LevelData data)
+        public void Build(Progress.LevelData data)
         {
             _gridMgr = new GridManager(data.Mask, data.StartCells);
             gridView.CreateGrid(_gridMgr, _movesCount);
 
+            int levelId = PlayerPrefs.GetInt("SelectedLevel", 1);
+
+            if (PlayerProgressService.Instance != null && 
+                PlayerProgressService.Instance.HasActiveGame(levelId))
+            {
+                Debug.Log("[GameController] Restoring saved game...");
+                RestoreFromSave(PlayerProgressService.Instance.GetActiveGameState());
+            }
+            else
+            {
+                Debug.Log("[GameController] Starting new game");
+                StartNewGame();
+            }
+
+            Finder = new ClusterFinder(_gridMgr);
+        }
+
+        private void StartNewGame()
+        {
             for (int i = 0; i < _movesCount; i++)
             {
                 _moves[i] = new Cell(Creator.CreateStack(3, 2, 1));
             }
-
             gridView.UpdateMoves(_moves);
-            Finder = new ClusterFinder(_gridMgr);
+            _currentScore = 0;
+        }
+
+        private void RestoreFromSave(ActiveGameState saved)
+        {
+            _currentScore = saved.score;
+
+            for (int i = 0; i < _movesCount; i++)
+            {
+                _moves[i] = new Cell();
+            }
+
+            foreach (CellState moveState in saved.moveSlots)
+            {
+                int slotIndex = moveState.x;
+                if (slotIndex >= 0 && slotIndex < _movesCount)
+                {
+                    var stack = new Stack<Hex>();
+                    for (int i = moveState.hexTypes.Count - 1; i >= 0; i--)
+                    {
+                        stack.Push(new Hex(moveState.hexTypes[i]));
+                    }
+                    _moves[slotIndex] = new Cell(stack);
+                }
+            }
+            gridView.UpdateMoves(_moves);
+
+            for (int y = 0; y < _gridMgr.Height; y++)
+            {
+                for (int x = 0; x < _gridMgr.Width; x++)
+                {
+                    Cell cell = _gridMgr.GetCell(x, y);
+                    if (cell != null)
+                    {
+                        cell.Free();
+                    }
+                }
+            }
+
+            foreach (CellState cellState in saved.gridCells)
+            {
+                Cell cell = _gridMgr.GetCell(cellState.x, cellState.y);
+                if (cell != null)
+                {
+                    for (int i = cellState.hexTypes.Count - 1; i >= 0; i--)
+                    {
+                        cell.Items.Push(new Hex(cellState.hexTypes[i]));
+                    }
+                    gridView.UpdateCell(cellState.x, cellState.y, cell);
+                }
+            }
+
+            Debug.Log($"[GameController] Restored: {saved.gridCells.Count} cells, {saved.moveSlots.Count} moves");
         }
 
         private void UpdateMoves()
@@ -79,7 +150,6 @@ namespace Controller
                 if (_moves[index].IsEmpty)
                 {
                     Debug.Log("This cell is empty!");
-
                     return;
                 }
 
@@ -112,19 +182,15 @@ namespace Controller
 
         private IEnumerator RebuildField(int lastMoveX, int lastMoveY)
         {
-            List<List<HexCoord>> clusters =
-                Finder.FindAllClusters();
+            List<List<HexCoord>> clusters = Finder.FindAllClusters();
             foreach (List<HexCoord> cluster in clusters)
             {
-                HexCoord target =
-                    SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
+                HexCoord target = SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
 
                 List<ClusterFinder.PullStep> steps = Finder.PullCluster(cluster, target);
                 foreach (ClusterFinder.PullStep step in steps)
                 {
-                    Debug.Log(
-                        $"MOVE {step.From.X},{step.From.Y} " +
-                        $"-> {step.To.X},{step.To.Y}");
+                    Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
 
                     Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
                     Cell toCell = _gridMgr.GetCell(step.To.X, step.To.Y);
@@ -154,27 +220,87 @@ namespace Controller
             if (!moved)
             {
                 _gameState = GameState.Select;
-
                 yield break;
             }
 
             gridView.UpdateCell(x, y, new Cell(moveCopied.Items));
 
-            // Rebuild field if needed
-            List<List<HexCoord>> clusters =
-                Finder.FindAllClusters();
+            List<List<HexCoord>> clusters = Finder.FindAllClusters();
             while (clusters.Count > 0)
             {
                 yield return StartCoroutine(RebuildField(x, y));
-
                 clusters = Finder.FindAllClusters();
             }
 
-            // Change game state
             UpdateMoves();
+            SaveCurrentState();
             _gameState = GameState.Select;
 
             // TODO: Check if win
+        }
+
+        private async void SaveCurrentState()
+        {
+            if (PlayerProgressService.Instance == null) return;
+
+            int levelNumber = PlayerPrefs.GetInt("SelectedLevel", 1);
+
+            var gridCells = new List<CellState>();
+            for (int y = 0; y < _gridMgr.Height; y++)
+            {
+                for (int x = 0; x < _gridMgr.Width; x++)
+                {
+                    Cell cell = _gridMgr.GetCell(x, y);
+                    if (cell != null && !cell.IsEmpty)
+                    {
+                        var state = new CellState
+                        {
+                            x = x,
+                            y = y,
+                            hexTypes = new List<int>()
+                        };
+
+                        foreach (Hex hex in cell.Items)
+                        {
+                            state.hexTypes.Add(hex.Type);
+                        }
+
+                        gridCells.Add(state);
+                    }
+                }
+            }
+
+            var moveSlots = new List<CellState>();
+            for (int i = 0; i < _moves.Length; i++)
+            {
+                if (!_moves[i].IsEmpty)
+                {
+                    var state = new CellState
+                    {
+                        x = i,
+                        y = 0,
+                        hexTypes = new List<int>()
+                    };
+
+                    foreach (Hex hex in _moves[i].Items)
+                    {
+                        state.hexTypes.Add(hex.Type);
+                    }
+
+                    moveSlots.Add(state);
+                }
+            }
+
+            var gameState = new ActiveGameState
+            {
+                levelNumber = levelNumber,
+                gridCells = gridCells,
+                moveSlots = moveSlots,
+                score = _currentScore
+            };
+
+            bool saved = await PlayerProgressService.Instance.SaveGameStateAsync(gameState);
+            Debug.Log($"[GameController] Game state saved: {saved}");
         }
 
         public void OnCellClicked(int x, int y)

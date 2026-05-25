@@ -127,6 +127,7 @@ namespace HexaSort.UI
         private void OnLevelClicked(int levelNum)
         {
             PlayerPrefs.SetInt("SelectedLevel", levelNum);
+            PlayerPrefs.Save();
             MusicManager.Instance?.PlayGameMusic();
             SceneManager.LoadScene("GameLevelScene");
         }

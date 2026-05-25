@@ -25,7 +25,6 @@ namespace HexaSort.Services
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
-
                 return;
             }
 
@@ -33,7 +32,6 @@ namespace HexaSort.Services
             DontDestroyOnLoad(gameObject);
         }
 
-        // TODO: remove async
         private async void Start()
         {
             if (FirebaseAuthService.Instance != null)
@@ -92,7 +90,6 @@ namespace HexaSort.Services
             if (result.Success)
             {
                 OnProgressSaved?.Invoke(Progress);
-
                 return true;
             }
 
@@ -138,6 +135,8 @@ namespace HexaSort.Services
                     Progress.currentLevel = levelNumber + 1;
             }
 
+            Progress.activeGame = null;
+
             bool saved = await SaveProgressAsync();
             if (saved)
                 OnLevelCompleted?.Invoke(levelNumber, Progress.levels.Find(l => l.levelNumber == levelNumber));
@@ -166,7 +165,35 @@ namespace HexaSort.Services
         public async Task<bool> ResetProgressAsync()
         {
             Progress = CreateInitialProgress();
+            return await SaveProgressAsync();
+        }
 
+        public async Task<bool> SaveGameStateAsync(ActiveGameState state)
+        {
+            if (Progress == null) return false;
+
+            Progress.activeGame = state;
+            Progress.activeGame.savedAt = DateTime.UtcNow.ToString("o");
+
+            return await SaveProgressAsync();
+        }
+
+        public ActiveGameState GetActiveGameState()
+        {
+            return Progress?.activeGame;
+        }
+
+        public bool HasActiveGame(int levelNumber)
+        {
+            return Progress?.activeGame != null &&
+                   Progress.activeGame.levelNumber == levelNumber;
+        }
+
+        public async Task<bool> ClearGameStateAsync()
+        {
+            if (Progress == null) return false;
+
+            Progress.activeGame = null;
             return await SaveProgressAsync();
         }
 
@@ -179,11 +206,11 @@ namespace HexaSort.Services
                 soundVolume = 0.5f,
                 createdAt = DateTime.UtcNow.ToString("o"),
                 lastUpdated = DateTime.UtcNow.ToString("o"),
-                levels = new List<LevelResult>()
+                levels = new List<LevelResult>(),
+                activeGame = null
             };
         }
 
-        // TODO: remove async
         private async void OnUserSignedIn(UserData user) => await LoadProgressAsync();
 
         private void OnUserSignedOut() => Progress = null;
@@ -210,6 +237,7 @@ namespace HexaSort.Services
         public string createdAt;
         public string lastUpdated;
         public List<LevelResult> levels;
+        public ActiveGameState activeGame;
     }
 
     [Serializable]
@@ -220,5 +248,23 @@ namespace HexaSort.Services
         public int bestScore;
         public bool completed;
         public string completedAt;
+    }
+
+    [Serializable]
+    public class ActiveGameState
+    {
+        public int levelNumber;
+        public List<CellState> gridCells;
+        public List<CellState> moveSlots;
+        public int score;
+        public string savedAt;
+    }
+
+    [Serializable]
+    public class CellState
+    {
+        public int x;
+        public int y;
+        public List<int> hexTypes;
     }
 }
