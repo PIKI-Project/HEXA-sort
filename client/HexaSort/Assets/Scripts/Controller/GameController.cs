@@ -108,6 +108,7 @@ namespace Controller
                     if (cell != null)
                     {
                         cell.Free();
+                        gridView.UpdateCell(x, y, cell);
                     }
                 }
             }
