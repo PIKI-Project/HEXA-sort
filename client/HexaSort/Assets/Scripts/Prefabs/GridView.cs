@@ -175,6 +175,8 @@ namespace prefabs
                 GameObject move = Instantiate(hexPrefab, vec, Quaternion.identity);
                 move.AddComponent<MoveCellClickHandler>().Init(controller, i);
                 _movePlatformObjects[i] = move;
+                HexView platformView = move.GetComponent<HexView>();
+                platformView.SetColor(-1);
             }
 
             // Game cells
@@ -197,7 +199,7 @@ namespace prefabs
                     _platformObjects[i, j] = platform;
 
                     HexView platformView = platform.GetComponent<HexView>();
-                    platformView.SetColor(0);
+                    platformView.SetColor(-1);
 
                     if (hexCountLabelPrefab != null)
                     {

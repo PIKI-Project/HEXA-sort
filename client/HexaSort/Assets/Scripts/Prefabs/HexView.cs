@@ -12,12 +12,13 @@ namespace prefabs
         {
             Color color = value switch
             {
-                0 => new Color32(173, 168, 174, 255),
+                0 => new Color32(255, 255, 255, 255),
                 1 => new Color32(255, 35, 47, 255),
                 2 => new Color32(35, 107, 254, 255),
                 3 => new Color32(62, 227, 75, 255),
-                4 => Color.yellow,
-                _ => Color.white
+                4 => new Color32(20, 20, 20, 255),
+                5 => new Color32(255, 255, 51, 255),
+                _ => new Color32(173, 168, 174, 255)
             };
 
             _renderer.material.SetColor(_baseColor, color);
