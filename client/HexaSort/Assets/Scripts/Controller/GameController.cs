@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Core;
 using prefabs;
 using Progress;
 using UnityEngine;
 using Utilities;
+using Random = UnityEngine.Random;
 
 namespace Controller
 {
@@ -22,6 +24,19 @@ namespace Controller
         public GridView gridView;
 
         private readonly Cell[] _moves = new Cell[_movesCount];
+
+        // TODO: write system for giving good moves
+        private readonly Cell[] _someReadyMoves =
+        {
+            new(Creator.CreateStack(3, 2, 2)),
+            new(Creator.CreateStack(3, 2, 1)),
+            new(Creator.CreateStack(3, 3, 3)),
+            new(Creator.CreateStack(2, 2, 2)),
+            new(Creator.CreateStack(2, 2, 1)),
+            new(Creator.CreateStack(1, 3, 3)),
+            new(Creator.CreateStack(2, 2, 3))
+        };
+
         private GameState _gameState = GameState.Select;
         private GridManager _gridMgr;
         private int _moveIndex = -1;
@@ -40,6 +55,21 @@ namespace Controller
 
             gridView.UpdateMoves(_moves);
             Finder = new ClusterFinder(_gridMgr);
+        }
+
+        private void UpdateMoves()
+        {
+            if (_moves.Any(mv => !mv.IsEmpty))
+            {
+                return;
+            }
+
+            for (int i = 0; i < _movesCount; i++)
+            {
+                _moves[i] = new Cell(_someReadyMoves[Random.Range(0, _someReadyMoves.Length - 1)].Items);
+            }
+
+            gridView.UpdateMoves(_moves);
         }
 
         public void OnMoveCellClicked(int index)
@@ -141,6 +171,7 @@ namespace Controller
             }
 
             // Change game state
+            UpdateMoves();
             _gameState = GameState.Select;
 
             // TODO: Check if win
