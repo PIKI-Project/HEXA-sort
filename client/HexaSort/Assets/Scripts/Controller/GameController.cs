@@ -22,6 +22,12 @@ namespace Controller
     public class GameController : MonoBehaviour
     {
         private const int _movesCount = 3;
+
+        private static readonly int[] _winScore =
+        {
+            100, 200, 300
+        };
+
         public GridView gridView;
 
         private readonly Cell[] _moves = new Cell[_movesCount];
@@ -188,27 +194,64 @@ namespace Controller
             return chosen;
         }
 
-        private IEnumerator RebuildField(int lastMoveX, int lastMoveY, List<HexCoord> cluster)
+        private IEnumerator RebuildField(int lastMoveX, int lastMoveY, List<List<HexCoord>> clusters)
         {
-            HexCoord target = SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
-
-            List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
-            foreach (ClusterFinder.PullStep step in steps)
+            foreach (List<HexCoord> cluster in clusters)
             {
-                yield return new WaitForSeconds(0.4f);
+                HexCoord target = SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
 
-                Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
+                List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
+                foreach (ClusterFinder.PullStep step in steps)
+                {
+                    yield return new WaitForSeconds(0.4f);
 
-                Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
-                Cell toCell = _gridMgr.GetCell(step.To.X, step.To.Y);
+                    Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
 
-                if (fromCell == null || toCell == null)
-                    throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
+                    Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
+                    Cell toCell = _gridMgr.GetCell(step.To.X, step.To.Y);
 
-                toCell.PushToTop(fromCell.PopTopIdentical());
-                gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
-                gridView.UpdateCell(step.To.X, step.To.Y, toCell);
+                    if (fromCell == null || toCell == null)
+                        throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
+
+                    toCell.PushToTop(fromCell.PopTopIdentical());
+                    gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
+                    gridView.UpdateCell(step.To.X, step.To.Y, toCell);
+                }
             }
+        }
+
+        private IEnumerator CheckFullStacks()
+        {
+            for (int y = 0; y < _gridMgr.Height; y++)
+                for (int x = 0; x < _gridMgr.Width; x++)
+                {
+                    Cell cell = _gridMgr.GetCell(x, y);
+                    if (cell.GetTopColorCount() >= 10)
+                    {
+                        Stack<Hex> scored = cell.PopTopIdentical();
+                        _currentScore += scored.Count;
+
+                        foreach (Hex hex in scored)
+                        {
+                            hex.UpdateColor(100);
+
+                            yield return new WaitForSeconds(0.04f);
+                        }
+
+                        yield return new WaitForSeconds(0.4f);
+
+                        foreach (Hex hex in scored)
+                        {
+                            hex.Free();
+                        }
+
+                        gridView.UpdateCell(x, y, cell);
+                    }
+                }
+        }
+
+        private void CheckVictory()
+        {
         }
 
         private IEnumerator ProcessMove(int x, int y)
@@ -231,13 +274,8 @@ namespace Controller
             List<List<HexCoord>> clusters = _finder.FindAllClusters();
             while (clusters.Count > 0)
             {
-                Debug.Log($"Found clusters: {clusters.Count}");
-                for (int i = 0; i < clusters.Count; i++)
-                {
-                    Debug.Log($"Cluster {i}: {_gridMgr.GetCell(clusters[i][0].X, clusters[i][0].Y).Peek().Type}");
-                }
-
-                yield return StartCoroutine(RebuildField(x, y, clusters[0]));
+                yield return StartCoroutine(RebuildField(x, y, clusters));
+                yield return StartCoroutine(CheckFullStacks());
 
                 clusters = _finder.FindAllClusters();
             }
@@ -245,8 +283,6 @@ namespace Controller
             UpdateMoves();
             SaveCurrentState();
             _gameState = GameState.Select;
-
-            // TODO: Check if win
         }
 
         private async void SaveCurrentState()
@@ -323,6 +359,7 @@ namespace Controller
             {
                 Debug.Log("You chosen cell: {" + x + ", " + y + "}");
                 StartCoroutine(ProcessMove(x, y));
+                // TODO: Check if win
             }
         }
     }

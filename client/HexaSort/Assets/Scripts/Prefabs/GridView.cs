@@ -111,6 +111,8 @@ namespace prefabs
                 if (hex.Obj is not null)
                 {
                     hex.Obj.transform.position = ComposePosition(pos, level);
+                    HexView view = hex.Obj.GetComponent<HexView>();
+                    view.SetColor(hex.Type);
                 }
                 else
                 {

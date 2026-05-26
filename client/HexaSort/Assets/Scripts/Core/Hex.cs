@@ -1,4 +1,5 @@
 using System;
+using prefabs;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -24,11 +25,10 @@ namespace Core
 
     public class Hex
     {
-        public readonly int Type;
-
         private HexCoord _pos = new(0, 0);
         public bool IsMovable = true;
         public GameObject Obj;
+        public int Type;
 
         public Hex(int type)
         {
@@ -42,6 +42,13 @@ namespace Core
             IsMovable = other.IsMovable;
 
             Obj = null;
+        }
+
+        public void UpdateColor(int type)
+        {
+            Type = type;
+            HexView view = Obj.GetComponent<HexView>();
+            view.SetColor(Type);
         }
 
         public void Free() => Object.Destroy(Obj);
