@@ -142,6 +142,7 @@ namespace Controller
 
         private void UpdateMoves()
         {
+            // TODO: clever system of moves giving
             if (_moves.Any(mv => !mv.IsEmpty))
             {
                 return;
@@ -252,6 +253,7 @@ namespace Controller
 
         private void CheckVictory()
         {
+            // TODO: Check if win
         }
 
         private IEnumerator ProcessMove(int x, int y)
@@ -359,7 +361,6 @@ namespace Controller
             {
                 Debug.Log("You chosen cell: {" + x + ", " + y + "}");
                 StartCoroutine(ProcessMove(x, y));
-                // TODO: Check if win
             }
         }
     }
