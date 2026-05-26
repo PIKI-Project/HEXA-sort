@@ -49,6 +49,7 @@ namespace prefabs
         private static readonly double _centerDistanceSin60 = _centerDistance * _sin60;
 
         public GameObject hexPrefab;
+        public GameObject hexPlatformPrefab;
         public GameObject hexCountLabelPrefab;
         public GameController controller;
         private GameObject[,] _cellLabelObjects;
@@ -94,6 +95,15 @@ namespace prefabs
             GameObject obj = Instantiate(hexPrefab, pos, Quaternion.identity);
             HexView view = obj.GetComponent<HexView>();
             view.SetColor(hexType);
+
+            return obj;
+        }
+
+        private GameObject InstantiatePlatform(Vector3 pos)
+        {
+            GameObject obj = Instantiate(hexPlatformPrefab, pos, Quaternion.identity);
+            HexView view = obj.GetComponent<HexView>();
+            view.SetColor(-1);
 
             return obj;
         }
@@ -152,7 +162,7 @@ namespace prefabs
             {
                 var vec = new Vector3((float)(_upperLeftX - 2 * _centerDistance - 0.3f * i), -_hexHeight / 2,
                     (float)_upperLeftY - 2.3f * i);
-                GameObject move = InstantiateHex(vec, -1);
+                GameObject move = InstantiatePlatform(vec);
                 move.AddComponent<MoveCellClickHandler>().Init(controller, i);
                 _movePlatformObjects[i] = move;
             }
@@ -172,7 +182,7 @@ namespace prefabs
 
                     // Create platform
                     var pos = new Vector3(globalX, -_hexHeight / 2, globalY);
-                    GameObject platform = InstantiateHex(pos, -1);
+                    GameObject platform = InstantiatePlatform(pos);
                     platform.AddComponent<CellClickHandler>().Init(controller, x, y);
                     _platformObjects[y, x] = platform;
 
