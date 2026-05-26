@@ -39,10 +39,14 @@ hexa-sort/
 │   │   ├── Prefabs/
 │   │   ├── Scenes/
 │   │   ├── Scripts/
+│   │   │   ├── Controller/
 │   │   │   ├── Core/
-│   │   │   ├── UI/
+│   │   │   ├── Game/
+│   │   │   ├── Prefabs/
 │   │   │   ├── Progress/
-│   │   │   └── Services/
+│   │   │   ├── UI/
+│   │   │   ├── Utilities/
+│   │   │   └── Service/
 │   │   └── ScriptableObjects/
 │   ├── Packages/
 │   └── ProjectSettings/
@@ -53,6 +57,7 @@ hexa-sort/
 │   └── tech-decisions.md
 │
 ├── tools/                 # Вспомогательные скрипты (опц.)
+├── backend/               # Что-либо для сохранений
 ├── .gitignore
 ├── .gitattributes
 └── README.md

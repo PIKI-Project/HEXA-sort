@@ -1,48 +1,86 @@
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 
 namespace Core
 {
     public class Cell
     {
-        private readonly Stack<Hex> _items;
-        private int Capacity { get; }
+        public readonly Stack<Hex> Items;
 
-        public Cell(int capacity)
+        public Cell()
         {
-            Capacity = capacity;
-            _items = new Stack<Hex>(capacity);
+            Items = new Stack<Hex>();
         }
 
-        public bool IsEmpty => _items.Count == 0;
-        public bool IsFull => _items.Count >= Capacity;
+        public Cell(Stack<Hex> startData)
+        {
+            Items = new Stack<Hex>(
+                startData
+                    .Reverse()
+                    .Select(h => new Hex(h))
+            );
+        }
+
+        public bool IsEmpty => Items.Count == 0;
+        public int Size => Items.Count;
+
+        public Stack<Hex> PopTopIdentical()
+        {
+            var result = new Stack<Hex>();
+
+            if (Items.Count == 0)
+                return result;
+
+            int topValue = Items.Peek().Type;
+
+            var matched = Items.TakeWhile(h => h.Type == topValue).ToList();
+            matched.ForEach(result.Push);
+
+            for (int i = 0; i < matched.Count; i++)
+            {
+                Items.Pop();
+            }
+
+            return new Stack<Hex>(result);
+        }
 
         [CanBeNull]
-        public Hex Top() => IsEmpty ? null : _items.Peek();
+        public Hex Peek() => IsEmpty ? null : Items.Peek();
 
-        public bool CanPush(Hex value)
+        public void PushToTop(Stack<Hex> stack)
         {
-            if (IsFull) return false;
-            if (IsEmpty) return true;
-
-            return Top() == value;
+            foreach (Hex item in stack.Reverse())
+            {
+                Items.Push(item);
+            }
         }
 
-        public void Push(Hex value) => _items.Push(value);
-
-        public Hex Pop() => _items.Pop();
+        public void Free()
+        {
+            while (Items.Count > 0)
+            {
+                Hex hex = Items.Pop();
+                hex.Free();
+            }
+        }
 
         public bool IsUniform()
         {
             if (IsEmpty) return false;
 
-            Hex first = _items.Peek();
-            foreach (Hex item in _items)
-            {
-                if (item != first) return false;
-            }
+            int firstType = Items.Peek().Type;
 
-            return true;
+            return Items.All(item => item.Type == firstType);
+        }
+
+        public int GetTopColorCount()
+        {
+            if (IsEmpty) return 0;
+
+            int topType = Items.Peek().Type;
+
+            return Items.TakeWhile(x => x.Type == topType).Count();
         }
     }
 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "412530449937",
+    "project_id": "hexa-2cd8a",
+    "storage_bucket": "hexa-2cd8a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412530449937:android:838604d92d1aee35989bb0",
+        "android_client_info": {
+          "package_name": "com.piki.hexasort"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBx7CR-mZ0a2i0B6pgyZSxs6rKY640KZBU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
