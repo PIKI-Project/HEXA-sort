@@ -1,28 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 
 namespace Core
 {
-    public readonly struct HexCoord : IEquatable<HexCoord>
-    {
-        public readonly int X;
-        public readonly int Y;
-
-        public HexCoord(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
-
-        public bool Equals(HexCoord other) => X == other.X && Y == other.Y;
-
-        public override bool Equals(object obj) => obj is HexCoord other && Equals(other);
-
-        public override int GetHashCode() => HashCode.Combine(X, Y);
-    }
-
     public class ClusterFinder
     {
         // odd-r offset
@@ -306,7 +287,8 @@ namespace Core
 
         public bool TryMove(Cell from, int toPosX, int toPosY) => _grid.TryPushCell(toPosX, toPosY, from);
 
-        [CanBeNull]
-        public Cell GetCell(int x, int y) => _grid.Mask[y, x] ? _grid.Cells[y, x] : null;
+        public Cell GetCell(int x, int y) => _grid.Cells[y, x];
+
+        public bool GetMask(int x, int y) => _grid.Mask[y, x];
     }
 }

@@ -3,11 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Core;
+using HexaSort.Services;
 using prefabs;
-using Progress;
 using UnityEngine;
 using Utilities;
-using HexaSort.Services;
+using LevelData = Progress.LevelData;
 using Random = UnityEngine.Random;
 
 namespace Controller
@@ -37,21 +37,24 @@ namespace Controller
             new(Creator.CreateStack(2, 2, 3))
         };
 
+        private int _currentScore;
+
+        private ClusterFinder _finder;
+
         private GameState _gameState = GameState.Select;
         private GridManager _gridMgr;
         private int _moveIndex = -1;
-        private int _currentScore = 0;
 
-        public ClusterFinder Finder;
-
-        public void Build(Progress.LevelData data)
+        public void Build(LevelData data)
         {
             _gridMgr = new GridManager(data.Mask, data.StartCells);
             gridView.CreateGrid(_gridMgr, _movesCount);
 
+            _finder = new ClusterFinder(_gridMgr);
+
             int levelId = PlayerPrefs.GetInt("SelectedLevel", 1);
 
-            if (PlayerProgressService.Instance != null && 
+            if (PlayerProgressService.Instance != null &&
                 PlayerProgressService.Instance.HasActiveGame(levelId))
             {
                 Debug.Log("[GameController] Restoring saved game...");
@@ -62,8 +65,6 @@ namespace Controller
                 Debug.Log("[GameController] Starting new game");
                 StartNewGame();
             }
-
-            Finder = new ClusterFinder(_gridMgr);
         }
 
         private void StartNewGame()
@@ -72,6 +73,7 @@ namespace Controller
             {
                 _moves[i] = new Cell(Creator.CreateStack(3, 2, 1));
             }
+
             gridView.UpdateMoves(_moves);
             _currentScore = 0;
         }
@@ -95,9 +97,11 @@ namespace Controller
                     {
                         stack.Push(new Hex(moveState.hexTypes[i]));
                     }
+
                     _moves[slotIndex] = new Cell(stack);
                 }
             }
+
             gridView.UpdateMoves(_moves);
 
             for (int y = 0; y < _gridMgr.Height; y++)
@@ -122,6 +126,7 @@ namespace Controller
                     {
                         cell.Items.Push(new Hex(cellState.hexTypes[i]));
                     }
+
                     gridView.UpdateCell(cellState.x, cellState.y, cell);
                 }
             }
@@ -138,7 +143,7 @@ namespace Controller
 
             for (int i = 0; i < _movesCount; i++)
             {
-                _moves[i] = new Cell(_someReadyMoves[Random.Range(0, _someReadyMoves.Length - 1)].Items);
+                _moves[i] = new Cell(_someReadyMoves[Random.Range(0, _someReadyMoves.Length)].Items);
             }
 
             gridView.UpdateMoves(_moves);
@@ -151,6 +156,7 @@ namespace Controller
                 if (_moves[index].IsEmpty)
                 {
                     Debug.Log("This cell is empty!");
+
                     return;
                 }
 
@@ -167,12 +173,13 @@ namespace Controller
         private HexCoord SelectTargetCell(List<HexCoord> cluster, HexCoord lastMove)
         {
             HexCoord chosen = lastMove;
+
+            if (_gridMgr.GetCell(chosen.X, chosen.Y).IsUniform())
+                return chosen;
+
             foreach (HexCoord c in cluster)
             {
                 Cell cell = _gridMgr.GetCell(c.X, c.Y);
-
-                if (cell == null)
-                    throw new ArgumentNullException(nameof(cell), "Cell not found!");
 
                 if (cell.IsUniform())
                     chosen = new HexCoord(c.X, c.Y);
@@ -183,14 +190,16 @@ namespace Controller
 
         private IEnumerator RebuildField(int lastMoveX, int lastMoveY)
         {
-            List<List<HexCoord>> clusters = Finder.FindAllClusters();
+            List<List<HexCoord>> clusters = _finder.FindAllClusters();
             foreach (List<HexCoord> cluster in clusters)
             {
                 HexCoord target = SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
 
-                List<ClusterFinder.PullStep> steps = Finder.PullCluster(cluster, target);
+                List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
                 foreach (ClusterFinder.PullStep step in steps)
                 {
+                    yield return new WaitForSeconds(0.4f);
+
                     Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
 
                     Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
@@ -202,35 +211,33 @@ namespace Controller
                     toCell.PushToTop(fromCell.PopTopIdentical());
                     gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
                     gridView.UpdateCell(step.To.X, step.To.Y, toCell);
-
-                    yield return new WaitForSeconds(0.3f);
                 }
             }
         }
 
         private IEnumerator ProcessMove(int x, int y)
         {
-            var moveCopied = new Cell(_moves[_moveIndex].Items);
-            _moves[_moveIndex].Free();
-            _moveIndex = -1;
-            gridView.UpdateMoves(_moves);
-
             _gameState = GameState.Animating;
-            bool moved = _gridMgr.TryMove(new Cell(moveCopied.Items), x, y);
+            bool moved = _gridMgr.TryMove(new Cell(_moves[_moveIndex].Items), x, y);
 
             if (!moved)
             {
                 _gameState = GameState.Select;
+
                 yield break;
             }
 
-            gridView.UpdateCell(x, y, new Cell(moveCopied.Items));
+            gridView.UpdateCell(x, y, _gridMgr.GetCell(x, y));
+            _moves[_moveIndex].Free();
+            _moveIndex = -1;
+            gridView.UpdateMoves(_moves);
 
-            List<List<HexCoord>> clusters = Finder.FindAllClusters();
+            List<List<HexCoord>> clusters = _finder.FindAllClusters();
             while (clusters.Count > 0)
             {
                 yield return StartCoroutine(RebuildField(x, y));
-                clusters = Finder.FindAllClusters();
+
+                clusters = _finder.FindAllClusters();
             }
 
             UpdateMoves();
@@ -242,7 +249,7 @@ namespace Controller
 
         private async void SaveCurrentState()
         {
-            if (PlayerProgressService.Instance == null) return;
+            if (PlayerProgressService.Instance is null) return;
 
             int levelNumber = PlayerPrefs.GetInt("SelectedLevel", 1);
 
@@ -252,22 +259,22 @@ namespace Controller
                 for (int x = 0; x < _gridMgr.Width; x++)
                 {
                     Cell cell = _gridMgr.GetCell(x, y);
-                    if (cell != null && !cell.IsEmpty)
+
+                    if (cell is not { IsEmpty: false }) continue;
+
+                    var state = new CellState
                     {
-                        var state = new CellState
-                        {
-                            x = x,
-                            y = y,
-                            hexTypes = new List<int>()
-                        };
+                        x = x,
+                        y = y,
+                        hexTypes = new List<int>()
+                    };
 
-                        foreach (Hex hex in cell.Items)
-                        {
-                            state.hexTypes.Add(hex.Type);
-                        }
-
-                        gridCells.Add(state);
+                    foreach (Hex hex in cell.Items)
+                    {
+                        state.hexTypes.Add(hex.Type);
                     }
+
+                    gridCells.Add(state);
                 }
             }
 

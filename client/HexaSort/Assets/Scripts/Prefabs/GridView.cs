@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Controller;
 using Core;
 using TMPro;
@@ -56,8 +55,6 @@ namespace prefabs
 
         private TextMeshProUGUI[,] _cellLabels;
 
-        private List<GameObject>[,] _cellObjects;
-        private List<GameObject>[] _moveCellObjects;
         private GameObject[] _moveLabelObjects;
         private TextMeshProUGUI[] _moveLabels;
         private GameObject[] _movePlatformObjects;
@@ -68,23 +65,6 @@ namespace prefabs
 
         public void UpdateMoves(Cell[] moves)
         {
-            if (_moveCellObjects == null)
-            {
-                _moveCellObjects = new List<GameObject>[moves.Length];
-                for (int i = 0; i < _moveCellObjects.Length; i++)
-                {
-                    _moveCellObjects[i] = new List<GameObject>();
-                }
-            }
-
-            foreach (List<GameObject> cell in _moveCellObjects)
-            {
-                foreach (GameObject obj in cell)
-                {
-                    Destroy(obj);
-                }
-            }
-
             for (int i = 0; i < moves.Length; i++)
             {
                 Vector3 pos = _movePlatformObjects[i].transform.position;
@@ -92,48 +72,48 @@ namespace prefabs
                 int level = moves[i].Items.Count;
                 foreach (Hex hex in moves[i].Items)
                 {
-                    GameObject obj = Instantiate(hexPrefab,
+                    if (hex.Obj is not null) continue;
+
+
+                    hex.Obj = Instantiate(hexPrefab,
                         new Vector3(pos.x, pos.y + level * (_hexHeight * _layerThreshold), pos.z),
                         Quaternion.identity);
                     level--;
 
-                    _moveCellObjects[i].Add(obj);
-                    HexView view = obj.GetComponent<HexView>();
+                    HexView view = hex.Obj.GetComponent<HexView>();
                     view.SetColor(hex.Type);
                 }
             }
         }
 
+        private Vector3 ComposePosition(Vector3 pos, int level) =>
+            new(pos.x, pos.y + level * (_hexHeight * _layerThreshold), pos.z);
+
+        private GameObject InstantiateHex(Vector3 pos, int hexType)
+        {
+            GameObject obj = Instantiate(hexPrefab, pos, Quaternion.identity);
+            HexView view = obj.GetComponent<HexView>();
+            view.SetColor(hexType);
+
+            return obj;
+        }
+
         public void UpdateCell(int x, int y, Cell cell)
         {
-            /*if (_cellObjects[y, x].Count != 0)
-            {
-                Debug.Log("Cell is not empty");
-                return;
-            }*/
-
-            // Rebuild cell
-            foreach (GameObject obj in _cellObjects[y, x])
-            {
-                Destroy(obj);
-            }
-
-            _cellObjects[y, x] = new List<GameObject>();
-
-            // Add objects to drawing
-            int level = cell.Items.Count - 1;
+            int level = cell.Items.Count;
             Vector3 pos = _platformObjects[y, x].transform.position;
             foreach (Hex hex in cell.Items)
             {
-                GameObject obj = Instantiate(hexPrefab,
-                    new Vector3(pos.x, _hexHeight * _layerThreshold / 2 +
-                                       level * (_hexHeight * _layerThreshold), pos.z),
-                    Quaternion.identity);
-                _cellObjects[y, x].Add(obj);
+                if (hex.Obj is not null)
+                {
+                    hex.Obj.transform.position = ComposePosition(pos, level);
+                }
+                else
+                {
+                    hex.Obj = InstantiateHex(ComposePosition(pos, level), hex.Type);
+                }
 
                 level--;
-                HexView view = obj.GetComponent<HexView>();
-                view.SetColor(hex.Type);
             }
 
             UpdateCellLabel(x, y, cell);
@@ -154,14 +134,8 @@ namespace prefabs
         public void CreateGrid(GridManager gridMgr, int movesCount)
         {
             _platformObjects = new GameObject[gridMgr.Height, gridMgr.Width];
-            _cellObjects = new List<GameObject>[gridMgr.Height, gridMgr.Width];
             _cellLabels = new TextMeshProUGUI[gridMgr.Height, gridMgr.Width];
             _cellLabelObjects = new GameObject[gridMgr.Height, gridMgr.Width];
-            for (int y = 0; y < gridMgr.Height; y++)
-                for (int x = 0; x < gridMgr.Width; x++)
-                {
-                    _cellObjects[y, x] = new List<GameObject>();
-                }
 
             _upperLeftY = (gridMgr.Height - 1) * _centerDistanceSin60 / 2;
             _upperLeftX = -gridMgr.Width * _centerDistance / 2;
@@ -172,75 +146,49 @@ namespace prefabs
             {
                 var vec = new Vector3((float)(_upperLeftX - 2 * _centerDistance - 0.3f * i), -_hexHeight / 2,
                     (float)_upperLeftY - 2.3f * i);
-                GameObject move = Instantiate(hexPrefab, vec, Quaternion.identity);
+                GameObject move = InstantiateHex(vec, -1);
                 move.AddComponent<MoveCellClickHandler>().Init(controller, i);
                 _movePlatformObjects[i] = move;
-                HexView platformView = move.GetComponent<HexView>();
-                platformView.SetColor(-1);
             }
 
             // Game cells
-            for (int i = 0; i < gridMgr.Height; i++)
+            for (int y = 0; y < gridMgr.Height; y++)
             {
-                for (int j = 0; j < gridMgr.Width; j++)
+                for (int x = 0; x < gridMgr.Width; x++)
                 {
-                    float y = (float)(_upperLeftY - i * _centerDistanceSin60);
-                    float x = (float)(_upperLeftX + j * _centerDistance + _centerDistance * (i % 2) / 2);
+                    float globalY = (float)(_upperLeftY - y * _centerDistanceSin60);
+                    float globalX = (float)(_upperLeftX + x * _centerDistance + _centerDistance * (y % 2) / 2);
 
-                    Cell cell = gridMgr.GetCell(j, i);
-
-                    if (cell == null)
+                    if (!gridMgr.GetMask(x, y))
                         continue;
 
-                    // Create platform
-                    GameObject platform =
-                        Instantiate(hexPrefab, new Vector3(x, -_hexHeight / 2, y), Quaternion.identity);
-                    platform.AddComponent<CellClickHandler>().Init(controller, j, i);
-                    _platformObjects[i, j] = platform;
+                    Cell cell = gridMgr.GetCell(x, y);
 
-                    HexView platformView = platform.GetComponent<HexView>();
-                    platformView.SetColor(-1);
+                    // Create platform
+                    var pos = new Vector3(globalX, -_hexHeight / 2, globalY);
+                    GameObject platform = InstantiateHex(pos, -1);
+                    platform.AddComponent<CellClickHandler>().Init(controller, x, y);
+                    _platformObjects[y, x] = platform;
 
                     if (hexCountLabelPrefab != null)
                     {
-                        GameObject label = Instantiate(hexCountLabelPrefab, new Vector3(x, _labelHeight, y),
+                        GameObject label = Instantiate(hexCountLabelPrefab, new Vector3(globalX, _labelHeight, globalY),
                             Quaternion.identity);
-                        _cellLabelObjects[i, j] = label;
-                        _cellLabels[i, j] = label.GetComponentInChildren<TextMeshProUGUI>();
+                        _cellLabelObjects[y, x] = label;
+                        _cellLabels[y, x] = label.GetComponentInChildren<TextMeshProUGUI>();
                     }
 
                     // Create hexes on platform
-                    int level = cell.Items.Count - 1;
+                    int level = cell.Items.Count;
                     foreach (Hex hex in cell.Items)
                     {
-                        GameObject obj = Instantiate(hexPrefab,
-                            new Vector3(x, _hexHeight * _layerThreshold / 2 +
-                                           level * (_hexHeight * _layerThreshold), y),
-                            Quaternion.identity);
-                        _cellObjects[i, j].Add(obj);
-
+                        hex.Obj = InstantiateHex(ComposePosition(pos, level), hex.Type);
                         level--;
-                        HexView view = obj.GetComponent<HexView>();
-                        view.SetColor(hex.Type);
                     }
 
-                    UpdateCellLabel(j, i, cell);
+                    UpdateCellLabel(x, y, cell);
                 }
             }
         }
-
-        /*public void UpdateCell(int index, Hex topValue)
-        {
-            if (topValue == null)
-                _hexStacks[index][0].SetColor(-1);
-            else
-                _hexStacks[index][0].SetColor(topValue.Type);
-        }
-
-        private struct HexStackPos
-        {
-            private float _x;
-            private float _y;
-        }*/
     }
 }

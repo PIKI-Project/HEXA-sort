@@ -15,7 +15,11 @@ namespace Core
 
         public Cell(Stack<Hex> startData)
         {
-            Items = new Stack<Hex>(startData.Reverse());
+            Items = new Stack<Hex>(
+                startData
+                    .Reverse()
+                    .Select(h => new Hex(h))
+            );
         }
 
         public bool IsEmpty => Items.Count == 0;
@@ -30,14 +34,12 @@ namespace Core
 
             int topValue = Items.Peek().Type;
 
-            foreach (Hex hex in Items.TakeWhile(hex => hex.Type == topValue))
-            {
-                result.Push(hex);
-            }
+            var matched = Items.TakeWhile(h => h.Type == topValue).ToList();
+            matched.ForEach(result.Push);
 
-            for (int i = 0; i < result.Count; i++)
+            for (int i = 0; i < matched.Count; i++)
             {
-                Pop();
+                Items.Pop();
             }
 
             return new Stack<Hex>(result);
@@ -54,9 +56,14 @@ namespace Core
             }
         }
 
-        private Hex Pop() => Items.Pop();
-
-        public void Free() => Items.Clear();
+        public void Free()
+        {
+            while (Items.Count > 0)
+            {
+                Hex hex = Items.Pop();
+                hex.Free();
+            }
+        }
 
         public bool IsUniform()
         {
