@@ -172,10 +172,10 @@ namespace Controller
 
         private HexCoord SelectTargetCell(List<HexCoord> cluster, HexCoord lastMove)
         {
-            HexCoord chosen = lastMove;
+            HexCoord chosen = cluster[0];
 
-            if (_gridMgr.GetCell(chosen.X, chosen.Y).IsUniform())
-                return chosen;
+            if (cluster.Contains(lastMove) && _gridMgr.GetCell(lastMove.X, lastMove.Y).IsUniform())
+                return lastMove;
 
             foreach (HexCoord c in cluster)
             {
@@ -188,30 +188,26 @@ namespace Controller
             return chosen;
         }
 
-        private IEnumerator RebuildField(int lastMoveX, int lastMoveY)
+        private IEnumerator RebuildField(int lastMoveX, int lastMoveY, List<HexCoord> cluster)
         {
-            List<List<HexCoord>> clusters = _finder.FindAllClusters();
-            foreach (List<HexCoord> cluster in clusters)
+            HexCoord target = SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
+
+            List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
+            foreach (ClusterFinder.PullStep step in steps)
             {
-                HexCoord target = SelectTargetCell(cluster, new HexCoord(lastMoveX, lastMoveY));
+                yield return new WaitForSeconds(0.4f);
 
-                List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
-                foreach (ClusterFinder.PullStep step in steps)
-                {
-                    yield return new WaitForSeconds(0.4f);
+                Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
 
-                    Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
+                Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
+                Cell toCell = _gridMgr.GetCell(step.To.X, step.To.Y);
 
-                    Cell fromCell = _gridMgr.GetCell(step.From.X, step.From.Y);
-                    Cell toCell = _gridMgr.GetCell(step.To.X, step.To.Y);
+                if (fromCell == null || toCell == null)
+                    throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
 
-                    if (fromCell == null || toCell == null)
-                        throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
-
-                    toCell.PushToTop(fromCell.PopTopIdentical());
-                    gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
-                    gridView.UpdateCell(step.To.X, step.To.Y, toCell);
-                }
+                toCell.PushToTop(fromCell.PopTopIdentical());
+                gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
+                gridView.UpdateCell(step.To.X, step.To.Y, toCell);
             }
         }
 
@@ -235,7 +231,13 @@ namespace Controller
             List<List<HexCoord>> clusters = _finder.FindAllClusters();
             while (clusters.Count > 0)
             {
-                yield return StartCoroutine(RebuildField(x, y));
+                Debug.Log($"Found clusters: {clusters.Count}");
+                for (int i = 0; i < clusters.Count; i++)
+                {
+                    Debug.Log($"Cluster {i}: {_gridMgr.GetCell(clusters[i][0].X, clusters[i][0].Y).Peek().Type}");
+                }
+
+                yield return StartCoroutine(RebuildField(x, y, clusters[0]));
 
                 clusters = _finder.FindAllClusters();
             }

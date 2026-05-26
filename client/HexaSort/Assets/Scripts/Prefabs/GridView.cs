@@ -101,7 +101,11 @@ namespace prefabs
         public void UpdateCell(int x, int y, Cell cell)
         {
             int level = cell.Items.Count;
-            Vector3 pos = _platformObjects[y, x].transform.position;
+            GameObject platformObject = _platformObjects[y, x];
+
+            if (platformObject is null) return;
+
+            Vector3 pos = platformObject.transform.position;
             foreach (Hex hex in cell.Items)
             {
                 if (hex.Obj is not null)
