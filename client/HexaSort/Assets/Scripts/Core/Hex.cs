@@ -26,7 +26,6 @@ namespace Core
     public class Hex
     {
         private HexCoord _pos = new(0, 0);
-        public bool IsMovable = true;
         public GameObject Obj;
         public int Type;
 
@@ -39,7 +38,6 @@ namespace Core
         {
             Type = other.Type;
             _pos = other._pos;
-            IsMovable = other.IsMovable;
 
             Obj = null;
         }

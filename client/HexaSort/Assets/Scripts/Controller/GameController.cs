@@ -8,7 +8,6 @@ using prefabs;
 using UnityEngine;
 using Utilities;
 using LevelData = Progress.LevelData;
-using Random = UnityEngine.Random;
 
 namespace Controller
 {
@@ -32,20 +31,12 @@ namespace Controller
 
         private readonly Cell[] _moves = new Cell[_movesCount];
 
-        private readonly Cell[] _someReadyMoves =
-        {
-            new(Creator.CreateStack(3, 2, 2)),
-            new(Creator.CreateStack(3, 2, 1)),
-            new(Creator.CreateStack(3, 3, 3)),
-            new(Creator.CreateStack(2, 2, 2)),
-            new(Creator.CreateStack(2, 2, 1)),
-            new(Creator.CreateStack(1, 3, 3)),
-            new(Creator.CreateStack(2, 2, 3))
-        };
 
         private int _currentScore;
 
         private ClusterFinder _finder;
+
+        private PlayerFortuneController _fortuneController;
 
         private GameState _gameState = GameState.Select;
         private GridManager _gridMgr;
@@ -55,6 +46,7 @@ namespace Controller
         {
             _gridMgr = new GridManager(data.Mask, data.StartCells);
             gridView.CreateGrid(_gridMgr, _movesCount);
+            _fortuneController = new PlayerFortuneController(_gridMgr);
 
             _finder = new ClusterFinder(_gridMgr);
 
@@ -142,23 +134,36 @@ namespace Controller
 
         private void UpdateMoves()
         {
-            // TODO: clever system of moves giving
             if (_moves.Any(mv => !mv.IsEmpty))
             {
                 return;
             }
 
-            for (int i = 0; i < _movesCount; i++)
+            Cell[] newMoves = _fortuneController.GetNewMoves(_movesCount);
+            for (int i = 0; i < _moves.Length; i++)
             {
-                _moves[i] = new Cell(_someReadyMoves[Random.Range(0, _someReadyMoves.Length)].Items);
+                _moves[i] = newMoves[i];
             }
 
             gridView.UpdateMoves(_moves);
         }
 
+        public void OnCellClicked(int x, int y)
+        {
+            if (_gameState != GameState.Move)
+            {
+                Debug.Log("You need to choose move!");
+            }
+            else
+            {
+                Debug.Log("You chosen cell: {" + x + ", " + y + "}");
+                StartCoroutine(ProcessMove(x, y));
+            }
+        }
+
         public void OnMoveCellClicked(int index)
         {
-            if (_gameState == GameState.Select)
+            if (_gameState is GameState.Select or GameState.Move)
             {
                 if (_moves[index].IsEmpty)
                 {
@@ -173,7 +178,7 @@ namespace Controller
             }
             else
             {
-                Debug.Log("You are already in move state!");
+                Debug.Log("You are not allowed to choose move now.");
             }
         }
 
@@ -349,19 +354,6 @@ namespace Controller
 
             bool saved = await PlayerProgressService.Instance.SaveGameStateAsync(gameState);
             Debug.Log($"[GameController] Game state saved: {saved}");
-        }
-
-        public void OnCellClicked(int x, int y)
-        {
-            if (_gameState != GameState.Move)
-            {
-                Debug.Log("You need to choose move!");
-            }
-            else
-            {
-                Debug.Log("You chosen cell: {" + x + ", " + y + "}");
-                StartCoroutine(ProcessMove(x, y));
-            }
         }
     }
 }
