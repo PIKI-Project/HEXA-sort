@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
 using Core;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Controller
 {
@@ -57,6 +59,7 @@ namespace Controller
         public PlayerFortuneController(GridManager gridMgr)
         {
             _gridMgr = gridMgr;
+            _temporaryPressure = 0.5f;
         }
 
         private void CountFortune()
@@ -68,10 +71,12 @@ namespace Controller
             _deadCellsRatio = (double)_gridMgr.GetDeadCells() / _gridMgr.GetTotalCells();
             _closeDoneStacksRatio = _gridMgr.GetCloseDoneCells() / _gridMgr.GetTotalCells();
 
-            _currentFortune = _freeCellsRatio * 0.45 +
+            _currentFortune = _freeCellsRatio * 0.55 +
                               (1f - _fieldEntropyRatio) * 0.15 +
                               (1f - _deadCellsRatio) * 0.15 +
-                              _closeDoneStacksRatio * 0.25;
+                              _closeDoneStacksRatio * 0.15;
+
+            Debug.Log("Fortune: " + _currentFortune);
 
             // Derivations from standart help
             _temporaryPressure *= 0.96f;
@@ -82,8 +87,7 @@ namespace Controller
                 _temporaryPressure += 0.015f;
             }
 
-            _temporaryPressure =
-                Mathf.Clamp01(_temporaryPressure);
+            _temporaryPressure = Mathf.Clamp01(_temporaryPressure);
         }
 
         public Cell[] GetNewMoves(int count)
@@ -105,15 +109,16 @@ namespace Controller
             Dictionary<int, int> colorMap = new();
             Stack<Hex> stack = new();
 
+            bool isFirst = true;
             foreach (int symbol in pattern.Pattern)
             {
                 if (!colorMap.ContainsKey(symbol))
                 {
-                    colorMap[symbol] =
-                        PickColorForSymbol();
+                    colorMap[symbol] = PickColorForSymbol(isFirst);
                 }
 
                 stack.Push(new Hex(colorMap[symbol]));
+                isFirst = false;
             }
 
             float corruptionChance =
@@ -129,9 +134,9 @@ namespace Controller
                 Random.Range(1, arr.Length - 1);
             int oldColor = arr[corruptIndex].Type;
             int newColor = oldColor;
-            while (newColor == oldColor)
+            if (newColor == oldColor)
             {
-                newColor = PickColorForSymbol();
+                newColor = PickColorForSymbol(false);
             }
 
             arr[corruptIndex] = new Hex(newColor);
@@ -142,10 +147,7 @@ namespace Controller
 
         private MovePattern SelectPattern()
         {
-            float desiredDifficulty =
-                Mathf.Clamp01(
-                    1f - (float)_currentFortune +
-                    _temporaryPressure);
+            float desiredDifficulty = Mathf.Clamp01((float)_currentFortune + _temporaryPressure);
 
             float totalWeight = 0f;
 
@@ -157,7 +159,7 @@ namespace Controller
 
                 float distance = Mathf.Abs(p.Difficulty - desiredDifficulty);
 
-                float weight = Mathf.Exp(-distance * 5f);
+                float weight = Mathf.Exp(-distance * 4f);
 
                 weights[i] = weight;
 
@@ -181,51 +183,42 @@ namespace Controller
         private SpawnIntent DecideIntent()
         {
             SpawnIntent intent;
-
-            float pressure =
-                1f - (float)_currentFortune;
+            float desiredPressure = (float)_currentFortune;
             float r = Random.value;
 
-            if (pressure > 0.8f)
+            if (desiredPressure > 0.8f)
             {
-                if (r < 0.85f)
+                if (r < 0.35f)
                     intent = SpawnIntent.Help;
                 else
                     intent = SpawnIntent.Neutral;
             }
             else
             {
-                if (r < 0.3f)
-                    intent = SpawnIntent.Neutral;
-                else if (r < 0.85f)
-                    intent = SpawnIntent.Pressure;
-                else
+                if (r < 0.1f)
                     intent = SpawnIntent.Help;
+                else if (r < 0.3f)
+                    intent = SpawnIntent.Neutral;
+                else
+                    intent = SpawnIntent.Pressure;
             }
 
             return intent;
         }
 
-        private int PickColorForSymbol()
+        private int PickColorForSymbol(bool isTopInPattern)
         {
             HashSet<int> availableColors = _gridMgr.GetAvailableColors();
-
-            List<ColorStats> stats =
-                _gridMgr.GetColorStats();
-
-            SpawnIntent intent =
-                DecideIntent();
+            List<ColorStats> stats = _gridMgr.GetColorStats();
+            SpawnIntent intent = DecideIntent();
 
             float totalWeight = 0f;
-
             List<(int color, float weight)> weights = new();
 
             foreach (ColorStats s in stats)
             {
                 if (!availableColors.Contains(s.Color))
                 {
-                    weights.Add((s.Color, 0.5f));
-
                     continue;
                 }
 
@@ -242,7 +235,7 @@ namespace Controller
                         break;
 
                     case SpawnIntent.Neutral:
-                        weight += s.TopCount * 1f;
+                        // weight += s.TopCount * 1f;
 
                         break;
 
@@ -250,7 +243,7 @@ namespace Controller
                         // Give rare colors
                         weight += Mathf.Max(
                             0,
-                            10 - s.TotalCount);
+                            4 - s.TotalCount);
 
                         // Punish dominant colors
                         weight -= s.TopCount * 1.5f;
@@ -265,9 +258,22 @@ namespace Controller
                 totalWeight += weight;
             }
 
-            float random =
-                Random.value * totalWeight;
+            float averageWeight = totalWeight / stats.Count;
+            foreach (ColorStats s in stats)
+            {
+                if (!availableColors.Contains(s.Color))
+                {
+                    float w = averageWeight + 0.5f - Random.value;
+                    if (isTopInPattern && _currentFortune > 0.5f)
+                        w += 3;
+                    weights.Add((s.Color, w));
+                    totalWeight += w;
+                }
+            }
 
+            float random = Random.value * totalWeight;
+
+            weights = weights.OrderBy(x => x.weight).ToList();
             foreach ((int color, float weight) entry in weights)
             {
                 random -= entry.weight;
