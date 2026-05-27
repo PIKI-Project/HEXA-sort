@@ -8,6 +8,7 @@ using prefabs;
 using UnityEngine;
 using Utilities;
 using LevelData = Progress.LevelData;
+using HexaSort.UI;
 
 namespace Controller
 {
@@ -74,6 +75,7 @@ namespace Controller
 
             gridView.UpdateMoves(_moves);
             _currentScore = 0;
+            ScoreUI.Instance?.UpdateScore(_currentScore);
         }
 
         private void RestoreFromSave(ActiveGameState saved)
@@ -128,8 +130,8 @@ namespace Controller
                     gridView.UpdateCell(cellState.x, cellState.y, cell);
                 }
             }
-
             Debug.Log($"[GameController] Restored: {saved.gridCells.Count} cells, {saved.moveSlots.Count} moves");
+            ScoreUI.Instance?.UpdateScore(_currentScore);
         }
 
         private void UpdateMoves()
@@ -236,6 +238,7 @@ namespace Controller
                     {
                         Stack<Hex> scored = cell.PopTopIdentical();
                         _currentScore += scored.Count;
+                        ScoreUI.Instance?.UpdateScore(_currentScore);
 
                         foreach (Hex hex in scored)
                         {
@@ -256,9 +259,80 @@ namespace Controller
                 }
         }
 
-        private void CheckVictory()
+        private const int _oneStarScore = 150;
+        private const int _twoStarScore = 200;
+        private const int _threeStarScore = 250;
+
+        private void CheckGameEnd()
         {
-            // TODO: Check if win
+            Debug.Log($"[CheckGameEnd] Called! Score: {_currentScore}");
+            if (_currentScore >= _threeStarScore)
+            {
+                StartCoroutine(HandleGameEnd());
+                return;
+            }
+
+            bool hasEmptyCells = false;
+            int emptyCount = 0;
+            
+            for (int y = 0; y < _gridMgr.Height; y++)
+            {
+                for (int x = 0; x < _gridMgr.Width; x++)
+                {
+                    if (!_gridMgr.GetMask(x, y)) continue;
+
+                    Cell cell = _gridMgr.GetCell(x, y);
+                    if (cell != null && cell.IsEmpty)
+                    {
+                        emptyCount++;
+                        hasEmptyCells = true;
+                    }
+                }
+            }
+            Debug.Log($"[CheckGameEnd] Empty cells: {emptyCount}, hasEmptyCells: {hasEmptyCells}");
+
+            if (hasEmptyCells) return;
+
+            Debug.Log($"[GameController] Game ended! Score: {_currentScore}");
+            StartCoroutine(HandleGameEnd());
+        }
+
+        private IEnumerator HandleGameEnd()
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            int stars = CalculateStars();
+            int LevelNumber = PlayerPrefs.GetInt("SelectedLevel", 1);
+
+            if (stars > 0)
+            {
+                Debug.Log($"[GameController] Victory! Stars: {stars}");
+
+                if (PlayerProgressService.Instance != null)
+                {
+                    _ = PlayerProgressService.Instance.CompleteLevelAsync(LevelNumber, _currentScore, stars);
+                }
+                WinPopup.Instance?.Show(stars);
+            }
+            else
+            {
+                Debug.Log("[GameController] Defeat!");
+
+                if (PlayerProgressService.Instance != null)
+                {
+                    _ = PlayerProgressService.Instance.ClearGameStateAsync();
+                }
+                LosePopup.Instance?.Show();
+                Debug.Log($"[HandleGameEnd] LosePopup.Instance: {LosePopup.Instance}");
+            }
+        }
+
+        private int CalculateStars()
+        {
+            if (_currentScore >= _threeStarScore) return 3;
+            if (_currentScore >= _twoStarScore) return 2;
+            if (_currentScore >= _oneStarScore) return 1;
+            return 0;
         }
 
         private IEnumerator ProcessMove(int x, int y)
@@ -289,6 +363,7 @@ namespace Controller
 
             UpdateMoves();
             SaveCurrentState();
+            CheckGameEnd();
             _gameState = GameState.Select;
         }
 
