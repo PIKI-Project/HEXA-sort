@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Core;
 using HexaSort.Services;
+using HexaSort.UI;
 using prefabs;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Utilities;
 using LevelData = Progress.LevelData;
-using HexaSort.UI;
 
 namespace Controller
 {
@@ -23,15 +24,16 @@ namespace Controller
     {
         private const int _movesCount = 3;
 
-        private static readonly int[] _winScore =
-        {
-            100, 200, 300
-        };
+        private const int _oneStarScore = 150;
+        private const int _twoStarScore = 200;
+        private const int _threeStarScore = 250;
 
         public GridView gridView;
 
-        private readonly Cell[] _moves = new Cell[_movesCount];
+        [FormerlySerializedAs("CamController")]
+        public CamController camController;
 
+        private readonly Cell[] _moves = new Cell[_movesCount];
 
         private int _currentScore;
 
@@ -43,10 +45,14 @@ namespace Controller
         private GridManager _gridMgr;
         private int _moveIndex = -1;
 
+        public Cell[] GetMoves() => _moves;
+
         public void Build(LevelData data)
         {
             _gridMgr = new GridManager(data.Mask, data.StartCells);
             gridView.CreateGrid(_gridMgr, _movesCount);
+            camController.Build(gridView);
+
             _fortuneController = new PlayerFortuneController(_gridMgr);
 
             _finder = new ClusterFinder(_gridMgr);
@@ -130,6 +136,7 @@ namespace Controller
                     gridView.UpdateCell(cellState.x, cellState.y, cell);
                 }
             }
+
             Debug.Log($"[GameController] Restored: {saved.gridCells.Count} cells, {saved.moveSlots.Count} moves");
             ScoreUI.Instance?.UpdateScore(_currentScore);
         }
@@ -259,22 +266,19 @@ namespace Controller
                 }
         }
 
-        private const int _oneStarScore = 150;
-        private const int _twoStarScore = 200;
-        private const int _threeStarScore = 250;
-
         private void CheckGameEnd()
         {
             Debug.Log($"[CheckGameEnd] Called! Score: {_currentScore}");
             if (_currentScore >= _threeStarScore)
             {
                 StartCoroutine(HandleGameEnd());
+
                 return;
             }
 
             bool hasEmptyCells = false;
             int emptyCount = 0;
-            
+
             for (int y = 0; y < _gridMgr.Height; y++)
             {
                 for (int x = 0; x < _gridMgr.Width; x++)
@@ -289,6 +293,7 @@ namespace Controller
                     }
                 }
             }
+
             Debug.Log($"[CheckGameEnd] Empty cells: {emptyCount}, hasEmptyCells: {hasEmptyCells}");
 
             if (hasEmptyCells) return;
@@ -312,6 +317,7 @@ namespace Controller
                 {
                     _ = PlayerProgressService.Instance.CompleteLevelAsync(LevelNumber, _currentScore, stars);
                 }
+
                 WinPopup.Instance?.Show(stars);
             }
             else
@@ -322,6 +328,7 @@ namespace Controller
                 {
                     _ = PlayerProgressService.Instance.ClearGameStateAsync();
                 }
+
                 LosePopup.Instance?.Show();
                 Debug.Log($"[HandleGameEnd] LosePopup.Instance: {LosePopup.Instance}");
             }
@@ -332,6 +339,7 @@ namespace Controller
             if (_currentScore >= _threeStarScore) return 3;
             if (_currentScore >= _twoStarScore) return 2;
             if (_currentScore >= _oneStarScore) return 1;
+
             return 0;
         }
 

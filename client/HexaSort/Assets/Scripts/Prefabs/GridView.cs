@@ -64,21 +64,49 @@ namespace prefabs
 
         private double _upperLeftX, _upperLeftY;
 
+        public void RotateMovePlatforms(double angle)
+        {
+            if (_movePlatformObjects == null)
+                return;
+
+            Cell[] moves = controller.GetMoves();
+            for (int i = 0; i < _movePlatformObjects.Length; i++)
+            {
+                _movePlatformObjects[i].transform
+                    .RotateAround(Vector3.zero, Vector3.up, (float)angle);
+
+                // TODO: fix dissapearing in rotation
+                Vector3 plPos = _movePlatformObjects[i].transform.position;
+
+                int level = moves[i].Items.Count;
+                foreach (Hex h in moves[i].Items)
+                {
+                    h.Obj.transform.position = ComposePosition(plPos, level);
+                    h.Obj.transform.rotation = _movePlatformObjects[i].transform.rotation;
+                }
+            }
+        }
+
         public void UpdateMoves(Cell[] moves)
         {
             for (int i = 0; i < moves.Length; i++)
             {
                 Vector3 pos = _movePlatformObjects[i].transform.position;
+                Quaternion rot = _movePlatformObjects[i].transform.rotation;
 
                 int level = moves[i].Items.Count;
                 foreach (Hex hex in moves[i].Items)
                 {
-                    if (hex.Obj is not null) continue;
+                    Vector3 posv = ComposePosition(pos, level);
+                    if (hex.Obj is not null)
+                    {
+                        hex.Obj.transform.position = posv;
+                        hex.Obj.transform.rotation = rot;
 
+                        continue;
+                    }
 
-                    hex.Obj = Instantiate(hexPrefab,
-                        new Vector3(pos.x, pos.y + level * (_hexHeight * _layerThreshold), pos.z),
-                        Quaternion.identity);
+                    hex.Obj = Instantiate(hexPrefab, posv, Quaternion.identity);
                     level--;
 
                     HexView view = hex.Obj.GetComponent<HexView>();
@@ -188,7 +216,8 @@ namespace prefabs
 
                     if (hexCountLabelPrefab != null)
                     {
-                        GameObject label = Instantiate(hexCountLabelPrefab, new Vector3(globalX, _labelHeight, globalY),
+                        GameObject label = Instantiate(hexCountLabelPrefab,
+                            new Vector3(globalX, _labelHeight, globalY),
                             Quaternion.identity);
                         _cellLabelObjects[y, x] = label;
                         _cellLabels[y, x] = label.GetComponentInChildren<TextMeshProUGUI>();
