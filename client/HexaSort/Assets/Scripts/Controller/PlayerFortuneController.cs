@@ -186,7 +186,7 @@ namespace Controller
             float desiredPressure = (float)_currentFortune;
             float r = Random.value;
 
-            if (desiredPressure > 0.75f)
+            if (desiredPressure > 0.40f)
             {
                 if (r < 0.35f)
                     intent = SpawnIntent.Help;
