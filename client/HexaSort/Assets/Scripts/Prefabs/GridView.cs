@@ -83,6 +83,7 @@ namespace prefabs
                 {
                     h.Obj.transform.position = ComposePosition(plPos, level);
                     h.Obj.transform.rotation = _movePlatformObjects[i].transform.rotation;
+                    level--;
                 }
             }
         }
@@ -102,15 +103,14 @@ namespace prefabs
                     {
                         hex.Obj.transform.position = posv;
                         hex.Obj.transform.rotation = rot;
-
-                        continue;
                     }
-
-                    hex.Obj = Instantiate(hexPrefab, posv, Quaternion.identity);
+                    else
+                    {
+                        hex.Obj = Instantiate(hexPrefab, posv, Quaternion.identity);
+                        HexView view = hex.Obj.GetComponent<HexView>();
+                        view.SetColor(hex.Type);    
+                    }
                     level--;
-
-                    HexView view = hex.Obj.GetComponent<HexView>();
-                    view.SetColor(hex.Type);
                 }
             }
         }
