@@ -971,11 +971,11 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 100
+  near clip plane: 1.3
+  far clip plane: 50
   field of view: 60
   orthographic: 1
-  orthographic size: 5.5
+  orthographic size: 6
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -2040,7 +2040,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0a894158a667431cb7c4205d7608d9b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexaSort.Services.FirebaseAuthService
-  config: {fileID: 11400000, guid: a20c6cf417dc0014e808f96afb8cf735, type: 2}
+  config: {fileID: 11400000, guid: dfcbae802c86643589127094ccd84bf7, type: 2}
 --- !u!4 &657447219
 Transform:
   m_ObjectHideFlags: 0
@@ -2145,7 +2145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4218cffd9df48476188781b5ff56b774, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexaSort.Services.FirestoreService
-  config: {fileID: 11400000, guid: a20c6cf417dc0014e808f96afb8cf735, type: 2}
+  config: {fileID: 11400000, guid: dfcbae802c86643589127094ccd84bf7, type: 2}
 --- !u!4 &694700036
 Transform:
   m_ObjectHideFlags: 0
@@ -4658,7 +4658,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70b46897ebc054d1e877b2a28a320157, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexaSort.Services.LevelDatabaseService
-  config: {fileID: 11400000, guid: a20c6cf417dc0014e808f96afb8cf735, type: 2}
+  config: {fileID: 11400000, guid: dfcbae802c86643589127094ccd84bf7, type: 2}
 --- !u!4 &1426191048
 Transform:
   m_ObjectHideFlags: 0

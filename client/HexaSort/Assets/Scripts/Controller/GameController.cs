@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Core;
 using HexaSort.Services;
+using HexaSort.UI;
 using prefabs;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Utilities;
 using LevelData = Progress.LevelData;
-using Random = UnityEngine.Random;
+using DG.Tweening;
 
 namespace Controller
 {
@@ -23,38 +25,36 @@ namespace Controller
     {
         private const int _movesCount = 3;
 
-        private static readonly int[] _winScore =
-        {
-            100, 200, 300
-        };
+        private const int _oneStarScore = 150;
+        private const int _twoStarScore = 200;
+        private const int _threeStarScore = 250;
 
         public GridView gridView;
 
-        private readonly Cell[] _moves = new Cell[_movesCount];
+        [FormerlySerializedAs("CamController")]
+        public CamController camController;
 
-        private readonly Cell[] _someReadyMoves =
-        {
-            new(Creator.CreateStack(3, 2, 2)),
-            new(Creator.CreateStack(3, 2, 1)),
-            new(Creator.CreateStack(3, 3, 3)),
-            new(Creator.CreateStack(2, 2, 2)),
-            new(Creator.CreateStack(2, 2, 1)),
-            new(Creator.CreateStack(1, 3, 3)),
-            new(Creator.CreateStack(2, 2, 3))
-        };
+        private readonly Cell[] _moves = new Cell[_movesCount];
 
         private int _currentScore;
 
         private ClusterFinder _finder;
 
+        private PlayerFortuneController _fortuneController;
+
         private GameState _gameState = GameState.Select;
         private GridManager _gridMgr;
         private int _moveIndex = -1;
+
+        public Cell[] GetMoves() => _moves;
 
         public void Build(LevelData data)
         {
             _gridMgr = new GridManager(data.Mask, data.StartCells);
             gridView.CreateGrid(_gridMgr, _movesCount);
+            camController.Build(gridView);
+
+            _fortuneController = new PlayerFortuneController(_gridMgr);
 
             _finder = new ClusterFinder(_gridMgr);
 
@@ -82,6 +82,7 @@ namespace Controller
 
             gridView.UpdateMoves(_moves);
             _currentScore = 0;
+            ScoreUI.Instance?.UpdateScore(_currentScore);
         }
 
         private void RestoreFromSave(ActiveGameState saved)
@@ -138,27 +139,41 @@ namespace Controller
             }
 
             Debug.Log($"[GameController] Restored: {saved.gridCells.Count} cells, {saved.moveSlots.Count} moves");
+            ScoreUI.Instance?.UpdateScore(_currentScore);
         }
 
         private void UpdateMoves()
         {
-            // TODO: clever system of moves giving
             if (_moves.Any(mv => !mv.IsEmpty))
             {
                 return;
             }
 
-            for (int i = 0; i < _movesCount; i++)
+            Cell[] newMoves = _fortuneController.GetNewMoves(_movesCount);
+            for (int i = 0; i < _moves.Length; i++)
             {
-                _moves[i] = new Cell(_someReadyMoves[Random.Range(0, _someReadyMoves.Length)].Items);
+                _moves[i] = newMoves[i];
             }
 
             gridView.UpdateMoves(_moves);
         }
 
+        public void OnCellClicked(int x, int y)
+        {
+            if (_gameState != GameState.Move)
+            {
+                Debug.Log("You need to choose move!");
+            }
+            else
+            {
+                Debug.Log("You chosen cell: {" + x + ", " + y + "}");
+                StartCoroutine(ProcessMove(x, y));
+            }
+        }
+
         public void OnMoveCellClicked(int index)
         {
-            if (_gameState == GameState.Select)
+            if (_gameState is GameState.Select or GameState.Move)
             {
                 if (_moves[index].IsEmpty)
                 {
@@ -173,7 +188,7 @@ namespace Controller
             }
             else
             {
-                Debug.Log("You are already in move state!");
+                Debug.Log("You are not allowed to choose move now.");
             }
         }
 
@@ -204,7 +219,7 @@ namespace Controller
                 List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
                 foreach (ClusterFinder.PullStep step in steps)
                 {
-                    yield return new WaitForSeconds(0.4f);
+                    //yield return new WaitForSeconds(0.4f);
 
                     Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
 
@@ -214,9 +229,39 @@ namespace Controller
                     if (fromCell == null || toCell == null)
                         throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
 
-                    toCell.PushToTop(fromCell.PopTopIdentical());
+                    Stack<Hex> movingHexes = fromCell.PopTopIdentical();
+
+                    Vector3 targetPos = gridView.GetCellPosition(step.To.X, step.To.Y);
+                    int targetLevel = toCell.Items.Count + movingHexes.Count;
+
+                    List<Hex> hexList = movingHexes.Reverse().ToList();
+                    float totalDelay = 0f;
+
+                    int baseLevel = toCell.Items.Count;
+
+                    for (int i = hexList.Count - 1; i >= 0; i--)
+                    {
+                        Hex hex = hexList[i];
+                        int level = baseLevel + (hexList.Count - i);
+                        Vector3 hexTargetPos = new Vector3(targetPos.x, targetPos.y + level * 0.216f, targetPos.z);
+
+                        float capturedDelay = totalDelay;
+                        Vector3 capturedPos = hexTargetPos;
+
+                        DOVirtual.DelayedCall(capturedDelay, () =>
+                        {
+                            hex.AnimateJumpTo(capturedPos, 0.6f, 0.4f);
+                        });
+
+                        totalDelay += 0.08f;
+                    }
+
+                    yield return new WaitForSeconds(totalDelay + 0.4f);
+
+
+                    toCell.PushToTop(movingHexes);
                     gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
-                    gridView.UpdateCell(step.To.X, step.To.Y, toCell);
+                    gridView.UpdateCellLabel(step.To.X, step.To.Y, toCell);
                 }
             }
         }
@@ -231,8 +276,24 @@ namespace Controller
                     {
                         Stack<Hex> scored = cell.PopTopIdentical();
                         _currentScore += scored.Count;
+                        ScoreUI.Instance?.UpdateScore(_currentScore);
 
-                        foreach (Hex hex in scored)
+                        List<Hex> hexList = scored.ToList();
+                        float totalDelay = 0f;
+
+                        for (int i = hexList.Count - 1; i >= 0; i--)
+                        {
+                            Hex hex = hexList[i];
+                            float capturedDelay = totalDelay;
+
+                            DOVirtual.DelayedCall(capturedDelay, () =>
+                            {
+                                hex.AnimateDisappear(0.25f);
+                            });
+
+                            totalDelay += 0.04f;
+
+                        /* foreach (Hex hex in scored)
                         {
                             hex.UpdateColor(100);
 
@@ -246,14 +307,95 @@ namespace Controller
                             hex.Free();
                         }
 
+                        gridView.UpdateCell(x, y, cell); */
+                        }
+                        yield return new WaitForSeconds(totalDelay + 0.3f);
+
+                        foreach (Hex hex in scored)
+                        {
+                            hex.Free();
+                        }
+
                         gridView.UpdateCell(x, y, cell);
                     }
                 }
         }
 
-        private void CheckVictory()
+        private void CheckGameEnd()
         {
-            // TODO: Check if win
+            Debug.Log($"[CheckGameEnd] Called! Score: {_currentScore}");
+            if (_currentScore >= _threeStarScore)
+            {
+                StartCoroutine(HandleGameEnd());
+
+                return;
+            }
+
+            bool hasEmptyCells = false;
+            int emptyCount = 0;
+
+            for (int y = 0; y < _gridMgr.Height; y++)
+            {
+                for (int x = 0; x < _gridMgr.Width; x++)
+                {
+                    if (!_gridMgr.GetMask(x, y)) continue;
+
+                    Cell cell = _gridMgr.GetCell(x, y);
+                    if (cell != null && cell.IsEmpty)
+                    {
+                        emptyCount++;
+                        hasEmptyCells = true;
+                    }
+                }
+            }
+
+            Debug.Log($"[CheckGameEnd] Empty cells: {emptyCount}, hasEmptyCells: {hasEmptyCells}");
+
+            if (hasEmptyCells) return;
+
+            Debug.Log($"[GameController] Game ended! Score: {_currentScore}");
+            StartCoroutine(HandleGameEnd());
+        }
+
+        private IEnumerator HandleGameEnd()
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            int stars = CalculateStars();
+            int LevelNumber = PlayerPrefs.GetInt("SelectedLevel", 1);
+
+            if (stars > 0)
+            {
+                Debug.Log($"[GameController] Victory! Stars: {stars}");
+
+                if (PlayerProgressService.Instance != null)
+                {
+                    _ = PlayerProgressService.Instance.CompleteLevelAsync(LevelNumber, _currentScore, stars);
+                }
+
+                WinPopup.Instance?.Show(stars);
+            }
+            else
+            {
+                Debug.Log("[GameController] Defeat!");
+
+                if (PlayerProgressService.Instance != null)
+                {
+                    _ = PlayerProgressService.Instance.ClearGameStateAsync();
+                }
+
+                LosePopup.Instance?.Show();
+                Debug.Log($"[HandleGameEnd] LosePopup.Instance: {LosePopup.Instance}");
+            }
+        }
+
+        private int CalculateStars()
+        {
+            if (_currentScore >= _threeStarScore) return 3;
+            if (_currentScore >= _twoStarScore) return 2;
+            if (_currentScore >= _oneStarScore) return 1;
+
+            return 0;
         }
 
         private IEnumerator ProcessMove(int x, int y)
@@ -284,6 +426,7 @@ namespace Controller
 
             UpdateMoves();
             SaveCurrentState();
+            CheckGameEnd();
             _gameState = GameState.Select;
         }
 
@@ -349,19 +492,6 @@ namespace Controller
 
             bool saved = await PlayerProgressService.Instance.SaveGameStateAsync(gameState);
             Debug.Log($"[GameController] Game state saved: {saved}");
-        }
-
-        public void OnCellClicked(int x, int y)
-        {
-            if (_gameState != GameState.Move)
-            {
-                Debug.Log("You need to choose move!");
-            }
-            else
-            {
-                Debug.Log("You chosen cell: {" + x + ", " + y + "}");
-                StartCoroutine(ProcessMove(x, y));
-            }
         }
     }
 }

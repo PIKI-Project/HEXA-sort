@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -81,6 +82,31 @@ namespace Core
             int topType = Items.Peek().Type;
 
             return Items.TakeWhile(x => x.Type == topType).Count();
+        }
+
+        public int GetMostColorRow()
+        {
+            if (IsEmpty) return 0;
+
+            int maxCount = 1;
+            int currentCount = 1;
+
+            var items = Items.ToList();
+
+            for (int i = 1; i < items.Count; i++)
+            {
+                if (items[i].Type == items[i - 1].Type)
+                {
+                    currentCount++;
+                }
+                else
+                {
+                    maxCount = Math.Max(maxCount, currentCount);
+                    currentCount = 1;
+                }
+            }
+
+            return Math.Max(maxCount, currentCount);
         }
     }
 }

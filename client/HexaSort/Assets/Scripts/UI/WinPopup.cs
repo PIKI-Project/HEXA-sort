@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using HexaSort.Services;
 using HexaSort.Audio;
+using DG.Tweening;
 
 namespace HexaSort.UI
 {
@@ -11,6 +12,8 @@ namespace HexaSort.UI
         public static WinPopup Instance { get; private set; }
 
         [Header("UI Elements")]
+        [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private RectTransform panel;
         [SerializeField] private Image[] starImages;
         [SerializeField] private Sprite starFilled;
         [SerializeField] private Sprite starEmpty;
@@ -37,10 +40,37 @@ namespace HexaSort.UI
         {
             for (int i = 0; i < starImages.Length; i++)
             {
-                starImages[i].sprite = i < stars ? starFilled : starEmpty;
+                starImages[i].sprite = starEmpty;
+                starImages[i].transform.localScale = Vector3.zero;
             }
 
             gameObject.SetActive(true);
+
+            canvasGroup.alpha = 0f;
+            panel.localScale = Vector3.one * 0.5f;
+
+            Sequence sequence = DOTween.Sequence();
+
+            sequence.Append(canvasGroup
+                .DOFade(1f, 0.3f)
+                .SetEase(Ease.OutQuad));
+
+            sequence.Join(panel
+                .DOScale(1f, 0.4f)
+                .SetEase(Ease.OutBack));
+
+            for (int i = 0; i < stars && i < starImages.Length; i++)
+            {
+                int index = i;
+                sequence.AppendInterval(0.2f);
+                sequence.AppendCallback(() =>
+                {
+                    starImages[index].sprite = starFilled;
+                    starImages[index].transform
+                        .DOScale(1f, 0.3f)
+                        .SetEase(Ease.OutBack);
+                });
+            }
         }
 
         private void OnNextClicked()
