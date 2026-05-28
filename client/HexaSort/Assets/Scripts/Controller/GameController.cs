@@ -10,6 +10,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using Utilities;
 using LevelData = Progress.LevelData;
+using DG.Tweening;
 
 namespace Controller
 {
@@ -218,7 +219,7 @@ namespace Controller
                 List<ClusterFinder.PullStep> steps = _finder.PullCluster(cluster, target);
                 foreach (ClusterFinder.PullStep step in steps)
                 {
-                    yield return new WaitForSeconds(0.4f);
+                    //yield return new WaitForSeconds(0.4f);
 
                     Debug.Log($"MOVE {step.From.X},{step.From.Y} -> {step.To.X},{step.To.Y}");
 
@@ -228,9 +229,39 @@ namespace Controller
                     if (fromCell == null || toCell == null)
                         throw new ArgumentNullException(nameof(toCell), "from/to Cell not found!");
 
-                    toCell.PushToTop(fromCell.PopTopIdentical());
+                    Stack<Hex> movingHexes = fromCell.PopTopIdentical();
+
+                    Vector3 targetPos = gridView.GetCellPosition(step.To.X, step.To.Y);
+                    int targetLevel = toCell.Items.Count + movingHexes.Count;
+
+                    List<Hex> hexList = movingHexes.Reverse().ToList();
+                    float totalDelay = 0f;
+
+                    int baseLevel = toCell.Items.Count;
+
+                    for (int i = hexList.Count - 1; i >= 0; i--)
+                    {
+                        Hex hex = hexList[i];
+                        int level = baseLevel + (hexList.Count - i);
+                        Vector3 hexTargetPos = new Vector3(targetPos.x, targetPos.y + level * 0.216f, targetPos.z);
+
+                        float capturedDelay = totalDelay;
+                        Vector3 capturedPos = hexTargetPos;
+
+                        DOVirtual.DelayedCall(capturedDelay, () =>
+                        {
+                            hex.AnimateJumpTo(capturedPos, 0.6f, 0.4f);
+                        });
+
+                        totalDelay += 0.08f;
+                    }
+
+                    yield return new WaitForSeconds(totalDelay + 0.4f);
+
+
+                    toCell.PushToTop(movingHexes);
                     gridView.UpdateCell(step.From.X, step.From.Y, fromCell);
-                    gridView.UpdateCell(step.To.X, step.To.Y, toCell);
+                    gridView.UpdateCellLabel(step.To.X, step.To.Y, toCell);
                 }
             }
         }
@@ -247,7 +278,22 @@ namespace Controller
                         _currentScore += scored.Count;
                         ScoreUI.Instance?.UpdateScore(_currentScore);
 
-                        foreach (Hex hex in scored)
+                        List<Hex> hexList = scored.ToList();
+                        float totalDelay = 0f;
+
+                        for (int i = hexList.Count - 1; i >= 0; i--)
+                        {
+                            Hex hex = hexList[i];
+                            float capturedDelay = totalDelay;
+
+                            DOVirtual.DelayedCall(capturedDelay, () =>
+                            {
+                                hex.AnimateDisappear(0.25f);
+                            });
+
+                            totalDelay += 0.04f;
+
+                        /* foreach (Hex hex in scored)
                         {
                             hex.UpdateColor(100);
 
@@ -255,6 +301,15 @@ namespace Controller
                         }
 
                         yield return new WaitForSeconds(0.4f);
+
+                        foreach (Hex hex in scored)
+                        {
+                            hex.Free();
+                        }
+
+                        gridView.UpdateCell(x, y, cell); */
+                        }
+                        yield return new WaitForSeconds(totalDelay + 0.3f);
 
                         foreach (Hex hex in scored)
                         {

@@ -3,6 +3,7 @@ using Controller;
 using Core;
 using TMPro;
 using UnityEngine;
+using DG.Tweening;
 
 namespace prefabs
 {
@@ -234,6 +235,42 @@ namespace prefabs
                     UpdateCellLabel(x, y, cell);
                 }
             }
+        }
+
+        public Tween AnimateHexesToCell(int x, int y, Cell cell)
+        {
+            GameObject platformObject = _platformObjects[y, x];
+            if (platformObject == null) return null;
+
+            Vector3 pos = platformObject.transform.position;
+            Sequence sequence = DOTween.Sequence();
+
+            int level = cell.Items.Count;
+            foreach (Hex hex in cell.Items)
+            {
+                Vector3 targetPos = ComposePosition(pos, level);
+
+                if (hex.Obj != null)
+                {
+                    sequence.Join(hex.Obj.transform.DOMove(targetPos, 0.3f).SetEase(Ease.OutQuad));
+                }
+                else
+                {
+                    hex.Obj = InstantiateHex(targetPos, hex.Type);
+                }
+
+                level--;
+            }
+
+            UpdateCellLabel(x, y, cell);
+
+            return sequence;
+        }
+
+        public Vector3 GetCellPosition(int x, int y)
+        {
+            if (_platformObjects[y, x] == null) return Vector3.zero;
+            return _platformObjects[y, x].transform.position;
         }
     }
 }

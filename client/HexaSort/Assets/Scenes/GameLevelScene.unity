@@ -3111,6 +3111,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1676453512}
   - component: {fileID: 1676453513}
+  - component: {fileID: 1676453514}
   m_Layer: 5
   m_Name: LosePopup
   m_TagString: Untagged
@@ -3151,8 +3152,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82950c967450749039c202d4528709e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexaSort.UI.LosePopup
+  canvasGroup: {fileID: 1676453514}
+  panel: {fileID: 1018087242}
   restartButton: {fileID: 922283209}
   menuButton: {fileID: 2113673947}
+--- !u!225 &1676453514
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1676453511}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1709719682
 GameObject:
   m_ObjectHideFlags: 0
@@ -3562,6 +3577,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1759374698}
   - component: {fileID: 1759374699}
+  - component: {fileID: 1759374700}
   m_Layer: 5
   m_Name: WinPopup
   m_TagString: Untagged
@@ -3603,6 +3619,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d52cc92e248134db9ae9d5f97122fb58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexaSort.UI.WinPopup
+  canvasGroup: {fileID: 1759374700}
+  panel: {fileID: 212459163}
   starImages:
   - {fileID: 752199757}
   - {fileID: 825919421}
@@ -3612,6 +3630,18 @@ MonoBehaviour:
   nextButton: {fileID: 1096864660}
   restartButton: {fileID: 832873566}
   menuButton: {fileID: 934529675}
+--- !u!225 &1759374700
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759374697}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1774950379
 GameObject:
   m_ObjectHideFlags: 0
