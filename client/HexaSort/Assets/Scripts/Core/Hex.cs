@@ -73,9 +73,18 @@ namespace Core
 
             Vector3 direction = targetPos - Obj.transform.position;
             direction.y = 0;
-            direction.Normalize();
+            
+            Vector3 mainDirection;
+            if (Mathf.Abs(direction.x) > Mathf.Abs(direction.z))
+            {
+                mainDirection = new Vector3(Mathf.Sign(direction.x), 0, 0);
+            }
+            else
+            {
+                mainDirection = new Vector3(0, 0, Mathf.Sign(direction.z));
+            }
 
-            Vector3 rotateAxis = Vector3.Cross(direction, Vector3.up) * -360;
+            Vector3 rotateAxis = Vector3.Cross(mainDirection, Vector3.up) * -360;
 
             Sequence sequence = DOTween.Sequence();
 
